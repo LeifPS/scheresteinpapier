@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Schnick Schnack Schnuck – Kartengenerator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@600;800&display=swap">
+<style>
+:root{--bg:#E9E5DB;--panel:#F7F4EC;--ink:#2B2619;--mut:#5E5846;--navy:#1B2A4E;--cream:#EDE6D6;--line:#CFC8B6}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,sans-serif;font-size:16px;line-height:1.45;padding-bottom:env(safe-area-inset-bottom)}
+h1,h2,h3{font-family:'Alfa Slab One',Georgia,serif;font-weight:400;margin:0}
+.top{background:var(--navy);color:var(--cream);padding:14px 16px 0;position:sticky;top:0;z-index:5}
+.top h1{font-size:22px;letter-spacing:.02em}
+.top p{margin:2px 0 0;font-size:13px;opacity:.8}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-top:8px}
+.tab{appearance:none;border:0;background:transparent;color:var(--cream);opacity:.75;font:800 15px/1 'Nunito',system-ui,sans-serif;padding:12px 14px;min-height:44px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.tab[aria-selected=true]{opacity:1;border-color:#F2D675}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.panel h2{font-size:20px;margin-bottom:6px}
+.hint{color:var(--mut);font-size:14px;margin:6px 0}
+.btn{appearance:none;border:0;border-radius:10px;background:var(--navy);color:var(--cream);font:800 15px/1 'Nunito',system-ui,sans-serif;padding:0 16px;min-height:44px;cursor:pointer}
+.btn.sec{background:transparent;color:var(--navy);border:2px solid var(--navy)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.tab:focus-visible,.chip:focus-visible,.cbtn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #2B63C9;outline-offset:2px}
+input[type=number],select{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font:600 16px 'Nunito',system-ui,sans-serif;background:#fff;color:var(--ink);max-width:100%}
+input[type=number]{width:96px}
+label{font-weight:800;font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row+.row{margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{appearance:none;border:2px solid var(--navy);background:transparent;color:var(--navy);border-radius:999px;font:800 14px/1 'Nunito',system-ui,sans-serif;padding:0 14px;min-height:40px;cursor:pointer}
+.chip.on{background:var(--navy);color:var(--cream)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.grid.small{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.cbtn{appearance:none;border:0;background:none;padding:0;cursor:pointer;border-radius:20px;display:block;width:100%;text-align:left}
+.cbtn .card,.grid .card{--w:100%}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){.cbtn{transition:transform .15s}.cbtn:hover{transform:translateY(-3px)}}
+.wrow{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.wrow div{display:flex;flex-direction:column;gap:4px}
+.wrow input{width:78px}
+.opts{display:flex;flex-wrap:wrap;gap:16px;margin:10px 0}
+.opts label{display:flex;align-items:center;gap:8px;min-height:44px;font-weight:600;font-size:15px}
+.opts input{width:20px;height:20px}
+.sum{font-weight:800;margin:6px 0 12px}
+table.q{border-collapse:collapse;width:100%;font-size:14px}
+table.q td,table.q th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.qwrap{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff;margin:10px 0}
+.x{appearance:none;border:0;background:transparent;font:800 18px/1 'Nunito',system-ui,sans-serif;min-width:44px;min-height:36px;cursor:pointer;color:#A02020}
+.preview{display:flex;flex-direction:column;align-items:center;gap:12px;overflow-x:auto;padding:8px 0}
+.preview .sheet{zoom:.55;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.rcs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.rc{border-radius:999px;padding:3px 10px;font-weight:800;font-size:13px}
+.rc.r0{background:#DDD5C2;color:#3A362D}.rc.r1{background:#CBE5D6;color:#11382A}.rc.r2{background:#C9DAF6;color:#12306A}.rc.r3{background:#DCC9F2;color:#2E1658}.rc.r4{background:#17122B;color:#F2D675}
+dialog{border:0;border-radius:16px;padding:0;width:min(760px,94vw);max-height:92vh;background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(20,20,40,.6)}
+.dgrid{display:grid;grid-template-columns:auto 1fr;gap:20px;padding:20px}
+@media (max-width:640px){.dgrid{grid-template-columns:1fr}}
+.dcard{display:flex;justify-content:center}
+.dcard .card{--w:min(300px,70vw)}
+.dinfo h2{font-size:24px;margin-bottom:8px}
+.dinfo h3{font-size:15px;margin:10px 0 2px}
+.dclose{display:flex;justify-content:flex-end;padding:0 20px 16px}
+.fight{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fight .side{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.fight .card{--w:min(240px,40vw)}
+@media (max-width:560px){.fight{grid-template-columns:1fr}.fight .card{--w:min(240px,70vw)}}
+.sr{position:absolute;left:-9999px}
+.res{font-weight:800;font-size:18px;margin:10px 0}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--navy);color:var(--cream);padding:12px 18px;border-radius:12px;font-weight:800;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+#toast.on{opacity:1}
+#printRoot{display:none}
+
+/* ---------- Karte (Maße in Entwurfs-Pixeln "pu", Kartenbreite = 300 pu) ---------- */
+.card{--w:238px;width:var(--w);aspect-ratio:63/88;container-type:inline-size;position:relative;flex:none;font-family:'Nunito',system-ui,sans-serif}
+.frame{position:absolute;inset:0;padding:3.3333cqw;background:var(--frame)}
+.round{filter:drop-shadow(0 6px 8px rgba(30,20,0,.25))}
+.round .frame{border-radius:6.6667cqw}
+.inner{width:100%;height:100%;padding:4.0000cqw;border-radius:4.0000cqw;background:var(--ground);color:var(--ink);display:flex;flex-direction:column;gap:2.6667cqw}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;height:16.0000cqw;flex:none}
+.nm{display:flex;flex-direction:column;gap:0.6667cqw;min-width:0}
+.name{font-family:'Alfa Slab One',Georgia,serif;line-height:10.0000cqw;white-space:nowrap;color:var(--ink)}
+.rar{font-weight:800;font-size:3.6667cqw;line-height:4.6667cqw;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+.gem{width:7.3333cqw;height:7.3333cqw;margin-top:2.0000cqw;background:var(--acc);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);flex:none}
+.art{position:relative;flex:1;min-height:0;border-radius:2.6667cqw;background:var(--art);overflow:hidden}
+.art svg{width:100%;height:100%;display:block}
+.zahl{position:absolute;right:2.6667cqw;bottom:2.6667cqw;width:18.0000cqw;height:18.0000cqw;border-radius:50%;border:1.0000cqw solid var(--acc);background:var(--ground);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink)}
+.zahl span{font-weight:800;font-size:2.6667cqw;line-height:3.3333cqw;letter-spacing:.12em;text-transform:uppercase}
+.zahl b{font-family:'Alfa Slab One',Georgia,serif;font-weight:400;font-size:5.6667cqw;line-height:6.0000cqw}
+.zahl.z4 b{font-size:4.3333cqw}
+.ab{flex:none;height:28.0000cqw;padding:2.6667cqw 3.3333cqw;border-radius:3.3333cqw;border:0.5000cqw solid var(--acc);background:rgba(242,214,117,.1);display:flex;flex-direction:column;gap:0.6667cqw;overflow:hidden}
+.abn{font-family:'Alfa Slab One',Georgia,serif;font-size:4.6667cqw;line-height:6.0000cqw;color:var(--acc)}
+.abt{font-weight:600;font-size:4.0000cqw;line-height:5.0000cqw;color:var(--ink)}
+.r0{--frame:#8C8676;--ground:#F1ECDF;--art:#DDD5C2;--ink:#3A362D;--acc:#6B6555}
+.r1{--frame:#1F7A57;--ground:#E6F2EB;--art:#CBE5D6;--ink:#11382A;--acc:#1F7A57}
+.r1 .inner{padding:4.6667cqw;box-shadow:inset 0 0 0 0.6667cqw #9ED0B6}
+.r2{--frame:#2B63C9;--ground:#E6EEFB;--art:#C9DAF6;--ink:#12306A;--acc:#2B63C9}
+.r2 .inner{padding:5.3333cqw;box-shadow:inset 0 0 0 1.0000cqw #fff,inset 0 0 0 2.0000cqw #2B63C9}
+.r3{--frame:#6B35B8;--ground:#EFE6FA;--art:#DCC9F2;--ink:#2E1658;--acc:#6B35B8}
+.r3 .inner{padding:4.6667cqw;box-shadow:inset 0 0 0 0.6667cqw #B995E6;clip-path:polygon(4.0000cqw 0,calc(100% - 4.0000cqw) 0,100% 4.0000cqw,100% calc(100% - 4.0000cqw),calc(100% - 4.0000cqw) 100%,4.0000cqw 100%,0 calc(100% - 4.0000cqw),0 4.0000cqw)}
+.r4{--frame:linear-gradient(135deg,#F2D675,#B98512 45%,#F7E39A 60%,#9A6D0A);--ground:#17122B;--art:#0B0818;--ink:#F6E7B4;--acc:#F2D675;--stat:#251C47}
+.r4 .frame{padding:4.0000cqw}
+.r4 .inner{border-radius:3.3333cqw;box-shadow:0 0 0 0.6667cqw #7A5508}
+.r4 .art{box-shadow:inset 0 0 0 0.6667cqw #7A5508}
+.r4 .name,.r4 .zahl b{color:#F2D675}
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+.r5{--frame:conic-gradient(from var(--a),#ff3b6b,#ffb400,#3bffb0,#3b9bff,#b43bff,#ff3b6b);--ground:#070312;--art:#050210;--ink:#FFFFFF;--acc:#FFFFFF}
+.r5 .frame{padding:4.6667cqw}
+.r5 .inner{padding:3.3333cqw;border-radius:2.6667cqw;box-shadow:0 0 0 0.6667cqw #fff,0 0 0 1.3333cqw #1a0b33;background:radial-gradient(circle at 20% 10%,#3b1670 0,transparent 55%),radial-gradient(circle at 85% 90%,#0b3b72 0,transparent 55%),#070312}
+.r5 .name,.r5 .rar,.r5 .abn{background:linear-gradient(90deg,#ff6bd6,#ffd36b,#6bffd9,#6bb7ff,#d66bff);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.r5 .gem{background:linear-gradient(135deg,#ff6bd6,#ffd36b,#6bffd9,#6bb7ff)}
+.r5 .art{background:radial-gradient(circle at 50% 50%,#1b0b3a 0,#050210 72%);box-shadow:inset 0 0 0 0.6667cqw #fff,inset 0 0 0 1.3333cqw #4a1d8f}
+.r5 .art::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.22) 42%,rgba(255,80,200,.25) 48%,rgba(80,255,255,.25) 54%,transparent 66%);background-size:250% 250%;background-position:50% 50%;mix-blend-mode:screen;pointer-events:none}
+.r5 .zahl{border-color:#fff;box-shadow:0 0 0 0.6667cqw #b43bff;color:#fff}
+.r5 .ab{border:0.5000cqw solid #fff;background:rgba(255,255,255,.08)}
+.r5 .abt{color:#fff}
+.sp{position:absolute;width:4.6667cqw;height:4.6667cqw;background:#fff;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);z-index:1}
+.round.r5{filter:drop-shadow(0 0 8px rgba(180,60,255,.75)) drop-shadow(0 0 20px rgba(59,155,255,.5))}
+.rc.r5{background:linear-gradient(90deg,#ff6bd6,#ffd36b,#6bffd9,#6bb7ff);color:#12082a}
+@keyframes spin{to{--a:360deg}}
+@keyframes sheen{0%{background-position:100% 0}100%{background-position:0 100%}}
+@media (prefers-reduced-motion:no-preference){
+.round.r5 .frame{animation:spin 6s linear infinite}
+.round.r5 .art::after{animation:sheen 4s ease-in-out infinite}
+}
+.cback .frame{background:#EDE6D6}
+.binner{width:100%;height:100%;padding:4.6667cqw 4.0000cqw;border-radius:4.0000cqw;background:#1B2A4E;box-shadow:inset 0 0 0 0.6667cqw #EDE6D6;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.bt{font-family:'Alfa Slab One',Georgia,serif;font-size:4.3333cqw;line-height:6.6667cqw;letter-spacing:.08em;text-transform:uppercase;color:#EDE6D6;text-align:center}
+.bs{font-weight:800;font-size:3.6667cqw;line-height:4.6667cqw;letter-spacing:.2em;text-transform:uppercase;color:#EDE6D6}
+.cback svg{width:100%;flex:1;min-height:0}
+
+/* ---------- Druckbogen ---------- */
+.sheet{position:relative;width:210mm;height:297mm;background:#fff;overflow:hidden;flex:none}
+.slot{position:absolute;width:63mm;height:88mm}
+.slot .card{--w:63mm}
+.m{position:absolute;background:#000}
+@page{size:A4;margin:0}
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{background:#fff;margin:0;padding:0}
+  .app,#toast,dialog{display:none!important}
+  #printRoot{display:block}
+  .frame,.art::after{animation:none!important}
+  .sheet{break-after:page;page-break-after:always;box-shadow:none;zoom:1}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <h1>Schnick Schnack Schnuck</h1>
+  <p id="sub"></p>
+  <nav class="tabs" role="tablist" aria-label="Bereiche">
+    <button class="tab" role="tab" data-tab="katalog">Katalog</button>
+    <button class="tab" role="tab" data-tab="zufall">Zufallsziehung</button>
+    <button class="tab" role="tab" data-tab="druck" id="tabDruck">Druckliste</button>
+    <button class="tab" role="tab" data-tab="kampf">Kampfrechner</button>
+  </nav>
+</header>
+<main>
+  <section id="s-katalog" role="tabpanel">
+    <div class="panel"><h2>Katalog</h2><p class="hint">Tippe auf eine Karte: Du siehst, wen sie immer schlägt, kannst eine Zahl festlegen und sie zur Druckliste hinzufügen. Die Zahlen im Katalog sind nur Beispiele.</p></div>
+    <div id="katalog"></div>
+  </section>
+
+  <section id="s-zufall" role="tabpanel" hidden>
+    <div class="panel">
+      <h2>Zufällige Karten ziehen</h2>
+      <p class="hint">Jede gezogene Karte bekommt ihre eigene Zufallszahl von 1 bis 1000. Seltene Karten kommen seltener.</p>
+      <div class="row"><label for="xCnt">Anzahl Karten</label><input id="xCnt" type="number" min="1" max="500" value="9" inputmode="numeric"></div>
+      <div class="wrow" id="wrow"></div>
+      <p class="hint">Die Prozentwerte sind Gewichte pro Seltenheit. Sie müssen nicht genau 100 ergeben.</p>
+      <div class="row"><button class="btn" data-act="draw">Karten ziehen</button><button class="btn sec" data-act="drawAll">Alle Karten einmal</button></div>
+    </div>
+    <div id="drawOut"></div>
+  </section>
+
+  <section id="s-druck" role="tabpanel" hidden>
+    <div class="panel">
+      <h2>Druckliste</h2>
+      <div id="optsQ"></div>
+      <div id="queueOut"></div>
+    </div>
+    <div id="queuePrev"></div>
+  </section>
+
+  <section id="s-kampf" role="tabpanel" hidden>
+    <div class="panel">
+      <h2>Kampfrechner</h2>
+      <p class="hint">Wähle zwei Karten. Verschiedene Karten entscheidet die feste Regel. Gleiche Karten entscheidet die höhere Zahl, bei gleicher Zahl gibt es einen Stich.</p>
+      <div class="fight">
+        <div class="side"><label for="fa">Spieler 1</label><select id="fa"></select><label for="na">Zahl</label><input id="na" type="number" min="1" max="1000" value="500"><div id="ca"></div></div>
+        <div class="side"><label for="fb">Spieler 2</label><select id="fb"></select><label for="nb">Zahl</label><input id="nb" type="number" min="1" max="1000" value="500"><div id="cb"></div></div>
+      </div>
+      <div class="res" id="fres" aria-live="polite"></div>
+    </div>
+    <div class="panel">
+      <h2>Spielregeln</h2>
+      <p class="hint">Jeder Spieler hat einen Stapel mit 10 Karten und 3 Karten auf der Hand. Beide legen verdeckt eine Karte und decken sie gleichzeitig auf. Die Karte, die laut Katalog schlägt, gewinnt die Runde. Danach wird nachgezogen. Gleiche Karten: höhere Zahl gewinnt. Gleiche Karte, gleiche Zahl: Stich, beide legen noch eine Karte, und wer die gewinnt, nimmt beide Runden mit.</p>
+    </div>
+  </section>
+</main>
+<div id="toast" role="status"></div>
+<dialog id="dlg" aria-label="Kartendetails"><div id="dlgBody"></div><div class="dclose"><button class="btn sec" data-act="dClose">Schließen</button></div></dialog>
+</div>
+<div id="printRoot"></div>
+
+<script>
+/* ===== Daten (aus dem Katalog erzeugt) ===== */
+const DATA={"rarities": ["Gewöhnlich", "Ungewöhnlich", "Selten", "Episch", "Legendär", "Mythisch"], "cards": [{"name": "Schere", "r": 0, "wins": ["Papier", "Feuer", "Metall", "Säure", "Seil", "Schwamm", "Gummi", "Sand", "Blitz", "Rost", "Dynamit", "Erdbeben", "Zeitreisender", "Schwarzes Loch"]}, {"name": "Stein", "r": 0, "wins": ["Schere", "Wasser", "Metall", "Magnet", "Spiegel", "Gummi", "Wind", "Glas", "Kaktus", "Pilz", "Vulkan", "Schatten", "Tsunami", "Laser"]}, {"name": "Papier", "r": 0, "wins": ["Stein", "Feuer", "Wasser", "Metall", "Seil", "Spiegel", "Gummi", "Blitz", "Rost", "Nebel", "Eisberg", "Sturm", "Diamant", "Meteorit"]}, {"name": "Feuer", "r": 1, "wins": ["Stein", "Eis", "Holz", "Seil", "Schwamm", "Magnet", "Gummi", "Sand", "Blitz", "Glas", "Kaktus", "Pilz", "Dynamit", "Vulkan", "Diamant", "Laser", "Gift"]}, {"name": "Wasser", "r": 1, "wins": ["Schere", "Feuer", "Säure", "Beton", "Magnet", "Lava", "Wind", "Rost", "Nebel", "Säge", "Dynamit", "Vulkan", "Diamant", "Erdbeben", "Meteorit", "Drache", "Zeitreisender"]}, {"name": "Eis", "r": 1, "wins": ["Schere", "Stein", "Papier", "Wasser", "Metall", "Säure", "Seil", "Schwamm", "Magnet", "Lava", "Glas", "Rost", "Nebel", "Dynamit", "Tsunami", "Gift", "Schwarzes Loch"]}, {"name": "Metall", "r": 1, "wins": ["Feuer", "Wasser", "Holz", "Beton", "Seil", "Spiegel", "Blitz", "Nebel", "Säge", "Vulkan", "Tsunami", "Erdbeben", "Meteorit", "Gift", "Drache", "Zeitreisender", "Schwarzes Loch"]}, {"name": "Holz", "r": 1, "wins": ["Schere", "Stein", "Papier", "Wasser", "Eis", "Seil", "Schwamm", "Magnet", "Spiegel", "Gummi", "Lava", "Glas", "Kaktus", "Nebel", "Vulkan", "Erdbeben", "Meteorit"]}, {"name": "Säure", "r": 1, "wins": ["Stein", "Papier", "Feuer", "Metall", "Holz", "Beton", "Seil", "Magnet", "Spiegel", "Lava", "Kaktus", "Rost", "Pilz", "Eisberg", "Schatten", "Tsunami", "Gift"]}, {"name": "Beton", "r": 1, "wins": ["Schere", "Stein", "Papier", "Feuer", "Eis", "Holz", "Seil", "Magnet", "Spiegel", "Gummi", "Lava", "Wind", "Blitz", "Vulkan", "Diamant", "Tsunami", "Gift"]}, {"name": "Seil", "r": 1, "wins": ["Stein", "Wasser", "Schwamm", "Magnet", "Spiegel", "Gummi", "Lava", "Sand", "Glas", "Rost", "Nebel", "Eisberg", "Dynamit", "Vulkan", "Erdbeben", "Gift", "Sonne"]}, {"name": "Schwamm", "r": 1, "wins": ["Stein", "Papier", "Wasser", "Metall", "Säure", "Beton", "Spiegel", "Wind", "Glas", "Rost", "Nebel", "Pilz", "Vulkan", "Diamant", "Schatten", "Laser", "Zeitreisender"]}, {"name": "Magnet", "r": 1, "wins": ["Schere", "Papier", "Metall", "Schwamm", "Spiegel", "Gummi", "Lava", "Wind", "Blitz", "Glas", "Säge", "Eisberg", "Dynamit", "Sturm", "Diamant", "Meteorit", "Drache"]}, {"name": "Spiegel", "r": 1, "wins": ["Schere", "Feuer", "Wasser", "Eis", "Lava", "Sand", "Blitz", "Kaktus", "Säge", "Eisberg", "Sturm", "Tsunami", "Laser", "Meteorit", "Gift", "Schwarzes Loch", "Sonne"]}, {"name": "Gummi", "r": 1, "wins": ["Wasser", "Eis", "Metall", "Säure", "Schwamm", "Spiegel", "Wind", "Blitz", "Glas", "Rost", "Nebel", "Pilz", "Dynamit", "Sturm", "Diamant", "Erdbeben", "Sonne"]}, {"name": "Lava", "r": 2, "wins": ["Schere", "Stein", "Papier", "Feuer", "Metall", "Schwamm", "Gummi", "Sand", "Wind", "Glas", "Nebel", "Pilz", "Eisberg", "Dynamit", "Sturm", "Schatten", "Tsunami", "Meteorit", "Gift"]}, {"name": "Sand", "r": 2, "wins": ["Stein", "Papier", "Wasser", "Eis", "Metall", "Holz", "Säure", "Beton", "Schwamm", "Magnet", "Gummi", "Glas", "Nebel", "Säge", "Sturm", "Laser", "Drache", "Schwarzes Loch", "Sonne"]}, {"name": "Wind", "r": 2, "wins": ["Schere", "Papier", "Feuer", "Eis", "Metall", "Holz", "Säure", "Seil", "Spiegel", "Sand", "Rost", "Nebel", "Pilz", "Sturm", "Diamant", "Tsunami", "Erdbeben", "Gift", "Schwarzes Loch"]}, {"name": "Blitz", "r": 2, "wins": ["Stein", "Wasser", "Eis", "Holz", "Säure", "Seil", "Schwamm", "Lava", "Sand", "Wind", "Nebel", "Säge", "Sturm", "Laser", "Meteorit", "Gift", "Drache", "Schwarzes Loch", "Sonne"]}, {"name": "Glas", "r": 2, "wins": ["Schere", "Papier", "Wasser", "Metall", "Säure", "Beton", "Spiegel", "Wind", "Blitz", "Rost", "Säge", "Pilz", "Sturm", "Schatten", "Tsunami", "Gift", "Drache", "Schwarzes Loch", "Sonne"]}, {"name": "Kaktus", "r": 2, "wins": ["Schere", "Papier", "Wasser", "Eis", "Metall", "Beton", "Seil", "Schwamm", "Magnet", "Gummi", "Lava", "Sand", "Wind", "Blitz", "Glas", "Rost", "Eisberg", "Dynamit", "Schatten"]}, {"name": "Rost", "r": 2, "wins": ["Stein", "Feuer", "Metall", "Holz", "Beton", "Magnet", "Spiegel", "Lava", "Sand", "Blitz", "Nebel", "Säge", "Eisberg", "Sturm", "Schatten", "Erdbeben", "Laser", "Meteorit", "Schwarzes Loch"]}, {"name": "Nebel", "r": 2, "wins": ["Schere", "Stein", "Feuer", "Säure", "Beton", "Magnet", "Spiegel", "Glas", "Kaktus", "Säge", "Pilz", "Eisberg", "Vulkan", "Diamant", "Schatten", "Tsunami", "Erdbeben", "Laser", "Schwarzes Loch"]}, {"name": "Säge", "r": 2, "wins": ["Schere", "Stein", "Papier", "Feuer", "Eis", "Holz", "Säure", "Beton", "Seil", "Schwamm", "Gummi", "Lava", "Wind", "Kaktus", "Pilz", "Eisberg", "Sturm", "Erdbeben", "Laser"]}, {"name": "Pilz", "r": 2, "wins": ["Schere", "Papier", "Wasser", "Eis", "Metall", "Holz", "Beton", "Seil", "Magnet", "Spiegel", "Sand", "Blitz", "Kaktus", "Rost", "Dynamit", "Vulkan", "Diamant", "Laser", "Gift"]}, {"name": "Eisberg", "r": 2, "wins": ["Schere", "Stein", "Feuer", "Wasser", "Eis", "Metall", "Holz", "Beton", "Schwamm", "Gummi", "Sand", "Wind", "Blitz", "Glas", "Pilz", "Sturm", "Diamant", "Laser", "Schwarzes Loch"]}, {"name": "Dynamit", "r": 2, "wins": ["Stein", "Papier", "Metall", "Holz", "Säure", "Beton", "Schwamm", "Spiegel", "Sand", "Wind", "Blitz", "Glas", "Rost", "Nebel", "Säge", "Eisberg", "Sturm", "Drache", "Sonne"]}, {"name": "Vulkan", "r": 3, "wins": ["Schere", "Papier", "Eis", "Säure", "Magnet", "Spiegel", "Gummi", "Lava", "Sand", "Wind", "Blitz", "Glas", "Kaktus", "Rost", "Säge", "Eisberg", "Dynamit", "Schatten", "Erdbeben", "Laser", "Drache", "Zeitreisender"]}, {"name": "Sturm", "r": 3, "wins": ["Schere", "Stein", "Feuer", "Wasser", "Eis", "Metall", "Holz", "Säure", "Beton", "Seil", "Schwamm", "Kaktus", "Nebel", "Pilz", "Vulkan", "Diamant", "Schatten", "Erdbeben", "Laser", "Meteorit", "Zeitreisender", "Sonne"]}, {"name": "Diamant", "r": 3, "wins": ["Schere", "Stein", "Eis", "Metall", "Holz", "Säure", "Seil", "Spiegel", "Lava", "Sand", "Blitz", "Glas", "Kaktus", "Rost", "Säge", "Dynamit", "Vulkan", "Tsunami", "Laser", "Meteorit", "Drache", "Sonne"]}, {"name": "Schatten", "r": 3, "wins": ["Schere", "Papier", "Feuer", "Wasser", "Eis", "Metall", "Holz", "Beton", "Seil", "Magnet", "Spiegel", "Gummi", "Sand", "Wind", "Blitz", "Säge", "Pilz", "Eisberg", "Dynamit", "Diamant", "Erdbeben", "Meteorit"]}, {"name": "Tsunami", "r": 3, "wins": ["Schere", "Papier", "Feuer", "Wasser", "Holz", "Seil", "Schwamm", "Magnet", "Gummi", "Sand", "Blitz", "Kaktus", "Rost", "Säge", "Pilz", "Eisberg", "Dynamit", "Vulkan", "Sturm", "Schatten", "Zeitreisender", "Sonne"]}, {"name": "Erdbeben", "r": 3, "wins": ["Stein", "Papier", "Feuer", "Eis", "Säure", "Beton", "Schwamm", "Magnet", "Spiegel", "Lava", "Sand", "Blitz", "Glas", "Kaktus", "Pilz", "Eisberg", "Dynamit", "Diamant", "Tsunami", "Meteorit", "Gift", "Sonne"]}, {"name": "Laser", "r": 3, "wins": ["Schere", "Papier", "Wasser", "Eis", "Metall", "Holz", "Säure", "Beton", "Seil", "Magnet", "Gummi", "Lava", "Wind", "Glas", "Kaktus", "Dynamit", "Schatten", "Tsunami", "Erdbeben", "Meteorit", "Gift", "Zeitreisender"]}, {"name": "Meteorit", "r": 3, "wins": ["Schere", "Stein", "Feuer", "Eis", "Säure", "Beton", "Seil", "Schwamm", "Gummi", "Sand", "Wind", "Glas", "Kaktus", "Nebel", "Säge", "Pilz", "Eisberg", "Dynamit", "Vulkan", "Tsunami", "Drache", "Zeitreisender"]}, {"name": "Gift", "r": 3, "wins": ["Schere", "Stein", "Papier", "Wasser", "Holz", "Schwamm", "Magnet", "Gummi", "Sand", "Kaktus", "Rost", "Nebel", "Säge", "Eisberg", "Dynamit", "Vulkan", "Sturm", "Diamant", "Schatten", "Tsunami", "Meteorit", "Drache"]}, {"name": "Drache", "r": 4, "wins": ["Schere", "Stein", "Papier", "Feuer", "Eis", "Holz", "Säure", "Beton", "Seil", "Schwamm", "Spiegel", "Gummi", "Lava", "Wind", "Kaktus", "Rost", "Nebel", "Säge", "Pilz", "Eisberg", "Sturm", "Schatten", "Tsunami", "Erdbeben", "Laser", "Zeitreisender", "Schwarzes Loch"], "ab": ["Feueratem", "Verliert der Drache eine Runde, kommt er zurück auf deine Hand statt auf den Ablagestapel."]}, {"name": "Zeitreisender", "r": 4, "wins": ["Stein", "Papier", "Feuer", "Eis", "Holz", "Säure", "Beton", "Seil", "Magnet", "Spiegel", "Gummi", "Lava", "Sand", "Wind", "Blitz", "Glas", "Kaktus", "Rost", "Nebel", "Säge", "Pilz", "Eisberg", "Dynamit", "Diamant", "Schatten", "Erdbeben", "Gift", "Urknall"], "ab": ["Zurückspulen", "Einmal pro Spiel darfst du deine verdeckte Karte vor dem Aufdecken tauschen."]}, {"name": "Schwarzes Loch", "r": 4, "wins": ["Stein", "Papier", "Feuer", "Wasser", "Holz", "Säure", "Beton", "Seil", "Schwamm", "Magnet", "Gummi", "Lava", "Kaktus", "Säge", "Pilz", "Dynamit", "Vulkan", "Sturm", "Diamant", "Schatten", "Tsunami", "Erdbeben", "Laser", "Meteorit", "Gift", "Zeitreisender", "Sonne", "Urknall"], "ab": ["Verschlingen", "Die gegnerische Karte kommt nach der Runde aus dem Spiel, nicht auf den Ablagestapel."]}, {"name": "Sonne", "r": 4, "wins": ["Schere", "Stein", "Papier", "Feuer", "Wasser", "Eis", "Metall", "Holz", "Säure", "Beton", "Schwamm", "Magnet", "Lava", "Wind", "Kaktus", "Rost", "Nebel", "Säge", "Pilz", "Eisberg", "Vulkan", "Schatten", "Laser", "Meteorit", "Gift", "Drache", "Zeitreisender", "Urknall"], "ab": ["Blenden", "Der Gegner muss seine Karte offen hinlegen, bevor du deine verdeckt wählst."]}, {"name": "Urknall", "r": 5, "wins": ["Schere", "Stein", "Papier", "Feuer", "Wasser", "Eis", "Metall", "Holz", "Säure", "Beton", "Seil", "Schwamm", "Magnet", "Spiegel", "Gummi", "Lava", "Sand", "Wind", "Blitz", "Glas", "Kaktus", "Rost", "Nebel", "Säge", "Pilz", "Eisberg", "Dynamit", "Vulkan", "Sturm", "Diamant", "Schatten", "Tsunami", "Erdbeben", "Laser", "Meteorit", "Gift", "Drache"], "ab": ["Neubeginn", "Gewinnt der Urknall, mischen beide Spieler ihre Handkarten in den Stapel und ziehen drei neue."]}]};
+const RN=DATA.rarities;
+const CARDS=DATA.cards.map((c,i)=>({id:i,name:c.name,r:c.r,ab:c.ab||null}));
+const IDX={};CARDS.forEach(c=>{IDX[c.name]=c.id});
+const WIN=DATA.cards.map(c=>new Set(c.wins.map(n=>IDX[n])));
+const N=CARDS.length;
+const INK=['#3A362D','#11382A','#12306A','#2E1658','#F2D675','#FFFFFF'];
+
+/* ===== Hilfen ===== */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd=n=>1+Math.floor(Math.random()*n);
+const clampNum=(v,a,b,d)=>{v=parseInt(v,10);return Number.isFinite(v)?Math.min(b,Math.max(a,v)):d};
+const demoNum=id=>(id*379+113)%900+100;
+let toastT=0;
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2200)}
+
+/* ===== Zustand ===== */
+const KEY='ssp-karten-v1';
+let Q=[],OPT={back:true,marks:true},DRAW=[],FILTER=-1,DLG=null,WT=[40,30,18,9,3,1];
+function load(){try{const j=JSON.parse(localStorage.getItem(KEY)||'null');if(!j)return;
+  if(Array.isArray(j.q))Q=j.q.filter(x=>x&&Number.isInteger(x.id)&&CARDS[x.id]&&Number.isInteger(x.num)&&x.num>=1&&x.num<=1000).map(x=>({id:x.id,num:x.num}));
+  if(j.opt)OPT={back:!!j.opt.back,marks:!!j.opt.marks};
+  if(Array.isArray(j.wt)&&j.wt.length===RN.length)WT=j.wt.map(v=>Math.max(0,Number(v)||0));
+}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({q:Q,opt:OPT,wt:WT}))}catch(e){}}
+
+/* ===== Symbole ===== */
+const ST=(i,w=4)=>`stroke="${i}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+const ICON={
+'Urknall':i=>{const u=(window.__u=(window.__u||0)+1);const p=[];for(let k=0;k<32;k++){const a=k*Math.PI/16-Math.PI/2,r=k%2?30:72;p.push((100+r*Math.cos(a)).toFixed(1)+','+(80+r*Math.sin(a)).toFixed(1))}
+let s='';[[18,22],[176,30],[30,138],[170,132],[150,10],[8,86],[192,82],[60,12],[142,148]].forEach(([x,y],k)=>{s+=`<circle cx="${x}" cy="${y}" r="${k%3?1.5:2.2}" fill="#fff"/>`});
+return `<defs><linearGradient id="ukR${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5ecb"/><stop offset=".35" stop-color="#ffd36b"/><stop offset=".68" stop-color="#5effd1"/><stop offset="1" stop-color="#6b9bff"/></linearGradient><radialGradient id="ukG${u}"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#ffe68a"/><stop offset="1" stop-color="#ff9a3c"/></radialGradient></defs>${s}<circle cx="100" cy="80" r="62" fill="none" stroke="#b43bff" stroke-width="2" stroke-dasharray="3 6" opacity=".8"/><polygon points="${p.join(' ')}" fill="url(#ukR${u})" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/><circle cx="100" cy="80" r="40" fill="#0a0420" stroke="#fff" stroke-width="2.5"/><circle cx="100" cy="80" r="26" fill="url(#ukG${u})"/><circle cx="100" cy="80" r="26" fill="none" stroke="#fff" stroke-width="2"/>`},
+'Schere':i=>`<circle cx="60" cy="122" r="17" fill="#E5484D" ${ST(i)}/><circle cx="140" cy="122" r="17" fill="#E5484D" ${ST(i)}/><circle cx="60" cy="122" r="7" fill="#fff" ${ST(i,2)}/><circle cx="140" cy="122" r="7" fill="#fff" ${ST(i,2)}/><polygon points="100,86 52,30 42,38 88,100" fill="#C8CED6" ${ST(i)}/><polygon points="100,86 148,30 158,38 112,100" fill="#C8CED6" ${ST(i)}/><line x1="88" y1="100" x2="71" y2="109" ${ST(i)}/><line x1="112" y1="100" x2="129" y2="109" ${ST(i)}/><circle cx="100" cy="92" r="4" fill="${i}"/>`,
+'Stein':i=>`<polygon points="40,110 55,60 95,35 140,42 168,78 160,118 110,132" fill="#B7AE98" ${ST(i)}/><polyline points="55,60 95,80 140,42" fill="none" ${ST(i,3)} opacity=".6"/><polyline points="95,80 110,132" fill="none" ${ST(i,3)} opacity=".6"/><polyline points="95,80 168,78" fill="none" ${ST(i,3)} opacity=".6"/>`,
+'Papier':i=>`<polygon points="56,22 118,22 146,50 146,138 56,138" fill="#FFFFFF" ${ST(i)}/><polyline points="118,22 118,50 146,50" fill="none" ${ST(i)}/><line x1="72" y1="80" x2="130" y2="80" ${ST(i,3)}/><line x1="72" y1="100" x2="130" y2="100" ${ST(i,3)}/><line x1="72" y1="120" x2="110" y2="120" ${ST(i,3)}/>`,
+'Feuer':i=>`<path d="M100 18 C112 48 142 62 142 100 C142 128 124 146 100 146 C76 146 58 128 58 102 C58 84 68 74 76 64 C78 80 86 86 92 86 C88 62 92 38 100 18 Z" fill="#F28C28" ${ST(i)}/><path d="M100 78 C108 94 122 100 122 116 C122 130 112 138 100 138 C88 138 78 130 78 118 C78 104 94 98 100 78 Z" fill="#FFD25A" ${ST(i,3)}/>`,
+'Wasser':i=>`<path d="M100 20 C100 20 56 76 56 104 C56 128 76 144 100 144 C124 144 144 128 144 104 C144 76 100 20 100 20 Z" fill="#4DA8F0" ${ST(i)}/><path d="M80 108 C80 120 88 129 98 131" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>`,
+'Eis':i=>`<polygon points="100,28 142,54 142,106 100,132 58,106 58,54" fill="#CFEFFF" ${ST(i)}/><line x1="100" y1="16" x2="100" y2="144" ${ST(i)}/><line x1="46" y1="47" x2="154" y2="113" ${ST(i)}/><line x1="46" y1="113" x2="154" y2="47" ${ST(i)}/><polyline points="88,28 100,40 112,28" fill="none" ${ST(i)}/><polyline points="88,132 100,120 112,132" fill="none" ${ST(i)}/>`,
+'Metall':i=>`<polygon points="66,56 152,56 172,88 52,88" fill="#D5DAE1" ${ST(i)}/><rect x="52" y="88" width="120" height="38" fill="#9AA3AF" ${ST(i)}/><line x1="72" y1="72" x2="120" y2="72" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`,
+'Holz':i=>`<rect x="38" y="52" width="108" height="76" rx="6" fill="#B9783C" ${ST(i)}/><ellipse cx="146" cy="90" rx="18" ry="38" fill="#D9A066" ${ST(i)}/><ellipse cx="146" cy="90" rx="10" ry="22" fill="none" ${ST(i,3)}/><ellipse cx="146" cy="90" rx="3.5" ry="8" fill="none" ${ST(i,3)}/><line x1="56" y1="72" x2="118" y2="72" ${ST(i,3)} opacity=".5"/><line x1="52" y1="108" x2="104" y2="108" ${ST(i,3)} opacity=".5"/>`,
+'Säure':i=>`<rect x="80" y="14" width="40" height="10" rx="3" fill="#C8CED6" ${ST(i)}/><path d="M84 24 H116 V62 L150 126 C156 140 148 148 138 148 H62 C52 148 44 140 50 126 L84 62 Z" fill="#EAF6FF" ${ST(i)}/><path d="M60 106 H140 L150 126 C156 140 148 148 138 148 H62 C52 148 44 140 50 126 Z" fill="#7BD83A" ${ST(i,3)}/><circle cx="82" cy="126" r="6" fill="#C9F29A" ${ST(i,2)}/><circle cx="112" cy="120" r="4" fill="#C9F29A" ${ST(i,2)}/><circle cx="104" cy="134" r="5" fill="#C9F29A" ${ST(i,2)}/>`,
+'Beton':i=>`<rect x="38" y="36" width="124" height="96" fill="#A9A9A9" ${ST(i)}/><line x1="38" y1="68" x2="162" y2="68" ${ST(i,3)}/><line x1="38" y1="100" x2="162" y2="100" ${ST(i,3)}/><line x1="94" y1="36" x2="94" y2="68" ${ST(i,3)}/><line x1="70" y1="68" x2="70" y2="100" ${ST(i,3)}/><line x1="124" y1="68" x2="124" y2="100" ${ST(i,3)}/><line x1="94" y1="100" x2="94" y2="132" ${ST(i,3)}/><line x1="132" y1="100" x2="132" y2="132" ${ST(i,3)}/>`,
+'Seil':i=>{const d="M36 124 C56 36 88 150 110 70 C122 28 164 40 152 92 C148 112 122 120 132 142";return `<path d="${d}" fill="none" stroke="${i}" stroke-width="20" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#C9A268" stroke-width="12" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#8A6A3A" stroke-width="12" stroke-dasharray="2 9"/>`},
+'Schwamm':i=>`<rect x="44" y="46" width="112" height="78" rx="16" fill="#F2D13A" ${ST(i)}/><circle cx="72" cy="72" r="8" fill="#D8B422" ${ST(i,2)}/><circle cx="112" cy="68" r="6" fill="#D8B422" ${ST(i,2)}/><circle cx="136" cy="98" r="9" fill="#D8B422" ${ST(i,2)}/><circle cx="82" cy="102" r="7" fill="#D8B422" ${ST(i,2)}/><circle cx="108" cy="98" r="5" fill="#D8B422" ${ST(i,2)}/>`,
+'Magnet':i=>{const d="M56 134 V68 C56 28 144 28 144 68 V134";return `<path d="${d}" fill="none" stroke="${i}" stroke-width="34"/><path d="${d}" fill="none" stroke="#E5484D" stroke-width="26"/><line x1="56" y1="134" x2="56" y2="112" stroke="#E8E8EE" stroke-width="26"/><line x1="144" y1="134" x2="144" y2="112" stroke="#E8E8EE" stroke-width="26"/><line x1="39" y1="134" x2="73" y2="134" ${ST(i)}/><line x1="127" y1="134" x2="161" y2="134" ${ST(i)}/>`},
+'Spiegel':i=>`<rect x="93" y="112" width="14" height="38" rx="5" fill="#C9A268" ${ST(i)}/><ellipse cx="100" cy="66" rx="46" ry="54" fill="#C9A268" ${ST(i)}/><ellipse cx="100" cy="66" rx="36" ry="44" fill="#DCEBFA" ${ST(i,3)}/><path d="M78 50 C84 38 96 32 108 32" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><line x1="78" y1="80" x2="96" y2="62" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`,
+'Gummi':i=>`<circle cx="100" cy="80" r="52" fill="#FF6FA5" ${ST(i)}/><path d="M52 62 C80 86 120 86 148 62" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M50 98 C80 120 120 120 150 98" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="M70 40 C78 34 88 32 96 32" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".8"/>`,
+'Lava':i=>`<path d="M30 118 C26 90 52 84 62 70 C74 50 96 56 106 44 C122 28 150 44 150 66 C150 80 170 78 172 100 C174 126 150 140 120 138 C96 144 66 146 48 136 C38 132 32 126 30 118 Z" fill="#FF5A1F" ${ST(i)}/><circle cx="70" cy="104" r="10" fill="#FFC24A" ${ST(i,3)}/><circle cx="112" cy="92" r="14" fill="#FFC24A" ${ST(i,3)}/><circle cx="140" cy="114" r="7" fill="#FFC24A" ${ST(i,3)}/><path d="M44 152 q10 -8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" ${ST(i,3)}/>`,
+'Sand':i=>`<circle cx="148" cy="42" r="15" fill="#FFD25A" ${ST(i,3)}/><path d="M16 120 C48 78 82 78 112 106 C134 86 164 88 186 116 L186 142 L16 142 Z" fill="#E8C26A" ${ST(i)}/><path d="M30 130 C60 116 90 120 120 132" fill="none" ${ST(i,3)}/>`,
+'Wind':i=>`<path d="M30 56 H108 C132 56 136 34 116 32" fill="none" ${ST(i,6)}/><path d="M30 86 H140 C164 86 168 62 146 58" fill="none" ${ST(i,6)}/><path d="M30 116 H100 C120 116 124 140 104 142" fill="none" ${ST(i,6)}/><path d="M122 112 H164" fill="none" ${ST(i,6)}/>`,
+'Blitz':i=>`<polygon points="112,14 54,92 94,92 78,148 148,64 106,64 126,14" fill="#FFD21F" ${ST(i)}/>`,
+'Glas':i=>`<path d="M60 22 H140 L130 112 C128 128 72 128 70 112 Z" fill="#CFEFF8" ${ST(i)}/><line x1="100" y1="126" x2="100" y2="142" ${ST(i)}/><line x1="72" y1="144" x2="128" y2="144" ${ST(i)}/><path d="M76 38 L82 98" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>`,
+'Kaktus':i=>`<path d="M84 104 H66 V78" fill="none" stroke="${i}" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/><path d="M84 104 H66 V78" fill="none" stroke="#4FA85A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 92 H134 V66" fill="none" stroke="${i}" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/><path d="M116 92 H134 V66" fill="none" stroke="#4FA85A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/><path d="M84 140 V58 C84 28 116 28 116 58 V140 Z" fill="#4FA85A" ${ST(i)}/><path d="M70 140 H130 L122 158 H78 Z" fill="#C96F3B" ${ST(i,3)}/><g stroke="${i}" stroke-width="2.5" stroke-linecap="round"><line x1="92" y1="60" x2="92" y2="54"/><line x1="108" y1="76" x2="108" y2="70"/><line x1="94" y1="96" x2="94" y2="90"/><line x1="106" y1="114" x2="106" y2="108"/></g>`,
+'Rost':i=>`<polygon points="70,22 130,22 150,46 130,70 70,70 50,46" fill="#B5562A" ${ST(i)}/><rect x="86" y="70" width="28" height="72" fill="#C7743A" ${ST(i)}/><line x1="86" y1="88" x2="114" y2="88" ${ST(i,3)}/><line x1="86" y1="104" x2="114" y2="104" ${ST(i,3)}/><line x1="86" y1="120" x2="114" y2="120" ${ST(i,3)}/><circle cx="82" cy="40" r="6" fill="#7A3416"/><circle cx="118" cy="50" r="5" fill="#7A3416"/><circle cx="104" cy="98" r="4" fill="#7A3416"/>`,
+'Nebel':i=>`<rect x="26" y="34" width="120" height="26" rx="13" fill="#D8E0E8" ${ST(i,3)}/><rect x="52" y="68" width="124" height="26" rx="13" fill="#E6ECF2" ${ST(i,3)}/><rect x="30" y="102" width="112" height="26" rx="13" fill="#D8E0E8" ${ST(i,3)}/><rect x="108" y="124" width="62" height="20" rx="10" fill="#E6ECF2" ${ST(i,3)}/>`,
+'Säge':i=>{const p=[];for(let k=0;k<32;k++){const a=k*Math.PI/16,r=k%2?44:56;p.push((100+r*Math.cos(a)).toFixed(1)+','+(80+r*Math.sin(a)).toFixed(1))}return `<polygon points="${p.join(' ')}" fill="#C8CED6" ${ST(i)}/><circle cx="100" cy="80" r="14" fill="#fff" ${ST(i)}/><circle cx="100" cy="80" r="30" fill="none" ${ST(i,2)} opacity=".5"/>`},
+'Pilz':i=>`<path d="M84 90 H116 L120 136 C120 144 80 144 80 136 Z" fill="#F3E6D0" ${ST(i)}/><path d="M34 92 C34 34 166 34 166 92 Z" fill="#E5484D" ${ST(i)}/><circle cx="70" cy="64" r="8" fill="#fff"/><circle cx="104" cy="52" r="7" fill="#fff"/><circle cx="134" cy="70" r="9" fill="#fff"/><circle cx="92" cy="80" r="5" fill="#fff"/>`,
+'Eisberg':i=>`<rect x="10" y="98" width="180" height="52" fill="#4DA8F0" opacity=".45"/><polygon points="40,102 78,70 94,84 120,30 170,102" fill="#E8F7FF" ${ST(i)}/><polygon points="40,102 170,102 138,148 74,142" fill="#A9DDF5" opacity=".9" ${ST(i,3)}/><polyline points="120,30 112,72 94,84" fill="none" ${ST(i,3)}/>`,
+'Dynamit':i=>`<rect x="52" y="52" width="30" height="86" rx="4" fill="#D63A3A" ${ST(i)}/><rect x="85" y="52" width="30" height="86" rx="4" fill="#D63A3A" ${ST(i)}/><rect x="118" y="52" width="30" height="86" rx="4" fill="#D63A3A" ${ST(i)}/><rect x="52" y="78" width="96" height="14" fill="#F6E7B4" ${ST(i,3)}/><path d="M100 52 C100 34 122 30 128 20" fill="none" ${ST(i)}/><polygon points="128,6 133,14 142,14 135,20 138,29 128,24 120,29 122,20 114,14 123,14" fill="#FFD21F" ${ST(i,2)}/>`,
+'Vulkan':i=>`<circle cx="100" cy="28" r="12" fill="#B8B8C2" ${ST(i,3)}/><circle cx="124" cy="20" r="9" fill="#B8B8C2" ${ST(i,3)}/><circle cx="78" cy="22" r="9" fill="#B8B8C2" ${ST(i,3)}/><polygon points="26,142 80,52 120,52 174,142" fill="#8A6246" ${ST(i)}/><polygon points="80,52 120,52 114,42 86,42" fill="#FF5A1F" ${ST(i,3)}/><path d="M98 52 L92 80 L102 100 L98 142" fill="none" stroke="#FF5A1F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>`,
+'Sturm':i=>`<path d="M54 100 C32 100 32 64 56 64 C58 42 94 36 106 56 C126 46 152 60 146 82 C164 84 164 104 146 104 Z" fill="#8E9BB0" ${ST(i)}/><polygon points="104,100 84,128 100,128 92,152 124,114 106,114 118,100" fill="#FFD21F" ${ST(i,3)}/><line x1="56" y1="116" x2="50" y2="130" ${ST(i,3)}/><line x1="140" y1="116" x2="134" y2="130" ${ST(i,3)}/><line x1="70" y1="124" x2="64" y2="138" ${ST(i,3)}/>`,
+'Diamant':i=>`<polygon points="60,52 140,52 168,84 100,148 32,84" fill="#8FD6F2" ${ST(i)}/><polygon points="60,52 100,52 80,84 32,84" fill="#C9F0FF"/><polygon points="100,52 140,52 168,84 120,84" fill="#B3E5F8"/><polyline points="32,84 168,84" fill="none" ${ST(i,3)}/><polyline points="60,52 80,84 100,148" fill="none" ${ST(i,3)}/><polyline points="100,52 80,84" fill="none" ${ST(i,3)}/><polyline points="100,52 120,84 100,148" fill="none" ${ST(i,3)}/><polyline points="140,52 120,84" fill="none" ${ST(i,3)}/>`,
+'Schatten':i=>`<path d="M60 144 C60 70 80 22 100 22 C120 22 140 70 140 144 Z" fill="#2B2540" ${ST(i)}/><ellipse cx="100" cy="74" rx="17" ry="21" fill="#0B0818"/><circle cx="93" cy="72" r="3.5" fill="#F2F2A0"/><circle cx="107" cy="72" r="3.5" fill="#F2F2A0"/>`,
+'Tsunami':i=>`<path d="M16 138 C16 72 70 30 120 34 C150 36 164 58 150 76 C140 66 124 66 120 80 C130 100 170 100 186 138 Z" fill="#2F8FE0" ${ST(i)}/><circle cx="146" cy="52" r="5" fill="#fff"/><circle cx="130" cy="42" r="4" fill="#fff"/><circle cx="158" cy="68" r="3.5" fill="#fff"/><path d="M30 120 C60 108 90 118 118 112" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/>`,
+'Erdbeben':i=>`<polygon points="10,86 92,86 84,106 102,124 86,146 10,146" fill="#8A6A4A" ${ST(i)}/><polygon points="190,86 112,86 120,108 106,126 122,148 190,148" fill="#7A5A3A" ${ST(i)}/><rect x="28" y="54" width="38" height="32" fill="#E8D8B8" ${ST(i)}/><polygon points="24,54 47,34 70,54" fill="#C96F3B" ${ST(i)}/><path d="M138 66 l8 -6 l8 8 l8 -8 l8 6" fill="none" ${ST(i,3)}/>`,
+'Laser':i=>`<rect x="14" y="62" width="48" height="36" rx="6" fill="#556070" ${ST(i)}/><rect x="62" y="75" width="96" height="10" fill="#FF2D55" ${ST(i,2)}/><rect x="62" y="78" width="96" height="4" fill="#FFB3C2"/><polygon points="176,54 182,70 198,64 188,80 198,96 182,90 176,106 170,90 154,96 164,80 154,64 170,70" fill="#FFD21F" ${ST(i,2)}/>`,
+'Meteorit':i=>`<polygon points="14,30 100,64 80,96 14,70" fill="#FF8A2A" ${ST(i,3)}/><polygon points="14,46 88,72 76,88 14,60" fill="#FFD25A"/><polygon points="88,84 108,52 142,58 158,92 138,126 100,130 80,110" fill="#7A6F66" ${ST(i)}/><circle cx="116" cy="82" r="8" fill="#5E554E" ${ST(i,3)}/><circle cx="136" cy="102" r="6" fill="#5E554E" ${ST(i,3)}/><circle cx="104" cy="110" r="5" fill="#5E554E" ${ST(i,3)}/>`,
+'Gift':i=>`<ellipse cx="100" cy="66" rx="44" ry="42" fill="#DCF2C0" ${ST(i)}/><rect x="76" y="96" width="48" height="32" rx="8" fill="#DCF2C0" ${ST(i)}/><circle cx="84" cy="66" r="11" fill="${i}"/><circle cx="116" cy="66" r="11" fill="${i}"/><polygon points="100,80 94,92 106,92" fill="${i}"/><line x1="90" y1="112" x2="90" y2="128" ${ST(i,3)}/><line x1="100" y1="112" x2="100" y2="128" ${ST(i,3)}/><line x1="110" y1="112" x2="110" y2="128" ${ST(i,3)}/>`,
+'Drache':i=>`<polygon points="72,70 78,38 94,64" fill="#F2D675" ${ST(i,3)}/><polygon points="104,62 120,26 130,66" fill="#F2D675" ${ST(i,3)}/><path d="M24 112 L52 78 L104 62 L146 70 L176 98 L152 104 L134 96 L120 116 L72 122 Z" fill="#C23B2B" ${ST(i)}/><circle cx="116" cy="82" r="7" fill="#F2D675"/><circle cx="116" cy="82" r="3" fill="#000"/><polygon points="136,97 140,110 146,99" fill="#fff"/><polygon points="122,108 126,120 132,106" fill="#fff"/><circle cx="162" cy="86" r="2.5" fill="#000"/>`,
+'Zeitreisender':i=>`<rect x="52" y="12" width="96" height="10" rx="3" fill="#F2D675" ${ST(i,3)}/><rect x="52" y="138" width="96" height="10" rx="3" fill="#F2D675" ${ST(i,3)}/><polygon points="62,22 138,22 106,80 138,138 62,138 94,80" fill="rgba(246,231,180,.15)" ${ST(i)}/><polygon points="70,28 130,28 104,70 96,70" fill="#F2D675"/><polygon points="78,138 122,138 100,106" fill="#F2D675"/><line x1="100" y1="72" x2="100" y2="104" stroke="#F2D675" stroke-width="3"/>`,
+'Schwarzes Loch':i=>`<circle cx="24" cy="30" r="1.5" fill="#F6E7B4"/><circle cx="170" cy="22" r="2" fill="#F6E7B4"/><circle cx="182" cy="130" r="1.5" fill="#F6E7B4"/><circle cx="14" cy="120" r="2" fill="#F6E7B4"/><circle cx="60" cy="140" r="1.5" fill="#F6E7B4"/><ellipse cx="100" cy="80" rx="82" ry="18" fill="none" stroke="#FF9A3C" stroke-width="3" opacity=".8"/><ellipse cx="100" cy="80" rx="68" ry="14" fill="none" stroke="#F2D675" stroke-width="5"/><circle cx="100" cy="80" r="34" fill="#000" stroke="#F2D675" stroke-width="3"/><path d="M32 80 A68 14 0 0 0 168 80" fill="none" stroke="#F2D675" stroke-width="5"/><path d="M18 80 A82 18 0 0 0 182 80" fill="none" stroke="#FF9A3C" stroke-width="3" opacity=".8"/>`,
+'Sonne':i=>{let r='';for(let k=0;k<12;k++){const a=k*Math.PI/6;r+=`<line x1="${(100+42*Math.cos(a)).toFixed(1)}" y1="${(80+42*Math.sin(a)).toFixed(1)}" x2="${(100+64*Math.cos(a)).toFixed(1)}" y2="${(80+64*Math.sin(a)).toFixed(1)}" ${ST(i,6)}/>`}return r+`<circle cx="100" cy="80" r="34" fill="#FFC93C" ${ST(i)}/>`}
+};
+
+/* ===== Karten-Markup ===== */
+function cardHTML(id,num,cls){
+  const c=CARDS[id],n=c.name;
+  const fs=n.length>12?19:(n.length>9?23:26);
+  const sp=c.r===5?'<i class="sp" style="left:4.6667cqw;top:4.0000cqw"></i><i class="sp" style="right:5.3333cqw;top:8.6667cqw;width:3.0000cqw;height:3.0000cqw"></i><i class="sp" style="left:6.6667cqw;bottom:23.3333cqw;width:3.0000cqw;height:3.0000cqw"></i><i class="sp" style="right:23.3333cqw;bottom:4.6667cqw;width:3.6667cqw;height:3.6667cqw"></i>':'';
+  return `<div class="card r${c.r} ${cls||''}"><div class="frame"><div class="inner">
+<div class="hd"><div class="nm"><div class="name" style="font-size:${(fs/3).toFixed(3)}cqw">${esc(n)}</div><div class="rar">${esc(RN[c.r])}</div></div><div class="gem"></div></div>
+<div class="art"><svg viewBox="0 0 200 160" role="img" aria-label="${esc(n)}">${ICON[n](INK[c.r])}</svg>${sp}<div class="zahl${num>=1000?' z4':''}"><span>Zahl</span><b>${num}</b></div></div>
+${c.ab?`<div class="ab"><div class="abn">${esc(c.ab[0])}</div><div class="abt">${esc(c.ab[1])}</div></div>`:''}
+</div></div></div>`;
+}
+function backHTML(cls){
+  const e='#EDE6D6',n='#1B2A4E';
+  return `<div class="card cback ${cls||''}"><div class="frame"><div class="binner"><div class="bt">Schnick Schnack Schnuck</div>
+<svg viewBox="0 0 256 356" role="img" aria-label="Stein schlägt Schere, Schere schlägt Papier, Papier schlägt Stein">
+<circle cx="128" cy="178" r="112" fill="none" stroke="${e}" stroke-width="1.5" opacity="0.35"/>
+<path d="M163.5 101.9 A84 84 0 0 1 211.7 185.3" fill="none" stroke="${e}" stroke-width="3" stroke-linecap="round"/><polygon points="216.7,185.7 206.7,184.9 211.1,192.3" fill="${e}"/>
+<path d="M176.2 246.8 A84 84 0 0 1 79.8 246.8" fill="none" stroke="${e}" stroke-width="3" stroke-linecap="round"/><polygon points="76.9,250.9 82.7,242.7 74.1,242.8" fill="${e}"/>
+<path d="M44.3 185.3 A84 84 0 0 1 92.5 101.9" fill="none" stroke="${e}" stroke-width="3" stroke-linecap="round"/><polygon points="90.4,97.4 94.6,106.4 98.8,98.9" fill="${e}"/>
+<g transform="translate(128 94)"><circle r="26" fill="${e}"/><polygon points="-12,6 -9,-8 2,-13 12,-6 10,8 -2,12" fill="${n}" stroke="${n}" stroke-width="2" stroke-linejoin="round"/></g>
+<g transform="translate(201 220)"><circle r="26" fill="${e}"/><line x1="-3" y1="-12" x2="7" y2="6" stroke="${n}" stroke-width="4" stroke-linecap="round"/><line x1="3" y1="-12" x2="-7" y2="6" stroke="${n}" stroke-width="4" stroke-linecap="round"/><circle cx="-8" cy="11" r="5" fill="none" stroke="${n}" stroke-width="3"/><circle cx="8" cy="11" r="5" fill="none" stroke="${n}" stroke-width="3"/></g>
+<g transform="translate(55 220)"><circle r="26" fill="${e}"/><polygon points="-10,-13 4,-13 10,-7 10,13 -10,13" fill="${n}" stroke="${n}" stroke-width="2" stroke-linejoin="round"/><polyline points="4,-13 4,-7 10,-7" fill="none" stroke="${e}" stroke-width="2" stroke-linejoin="round"/></g>
+</svg><div class="bs">Sammelkarten</div></div></div></div>`;
+}
+
+/* ===== Druckbogen: A4, 3 x 3 Karten zu 63 x 88 mm ===== */
+const GX=10.5,GY=16.5,CW=63,CH=88;
+function sheet(items,marks){
+  let h='<div class="sheet">';
+  for(const it of items){const r=Math.floor(it.pos/3),c=it.pos%3;h+=`<div class="slot" style="left:${GX+c*CW}mm;top:${GY+r*CH}mm">${it.html}</div>`}
+  if(marks){
+    for(let k=0;k<=3;k++){const x=GX+k*CW-.1;h+=`<i class="m" style="left:${x}mm;top:${GY-6}mm;width:.2mm;height:5mm"></i><i class="m" style="left:${x}mm;top:${GY+3*CH+1}mm;width:.2mm;height:5mm"></i>`}
+    for(let k=0;k<=3;k++){const y=GY+k*CH-.1;h+=`<i class="m" style="left:${GX-6}mm;top:${y}mm;width:5mm;height:.2mm"></i><i class="m" style="left:${GX+3*CW+1}mm;top:${y}mm;width:5mm;height:.2mm"></i>`}
+  }
+  return h+'</div>';
+}
+function sheetsHTML(list){
+  let out='';
+  for(let p=0;p<list.length;p+=9){
+    const page=list.slice(p,p+9);
+    out+=sheet(page.map((it,i)=>({pos:i,html:cardHTML(it.id,it.num,'')})),OPT.marks);
+    if(OPT.back)out+=sheet(page.map((it,i)=>{const r=Math.floor(i/3),c=i%3;return{pos:r*3+(2-c),html:backHTML('')}}),OPT.marks);
+  }
+  return out;
+}
+function pageCount(n){const f=Math.ceil(n/9);return OPT.back?f*2:f}
+function doPrint(list){
+  if(!list.length){toast('Keine Karten zum Drucken.');return}
+  if($('#dlg').open)$('#dlg').close();
+  $('#printRoot').innerHTML=sheetsHTML(list);
+  const go=()=>{try{window.print()}catch(e){toast('Drucken nicht möglich: '+e.message)}};
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(go,200));
+}
+window.addEventListener('afterprint',()=>{$('#printRoot').innerHTML=''});
+
+/* ===== Ziehen ===== */
+function pickCard(wt){
+  const sum=wt.reduce((a,b)=>a+b,0);let r=0;
+  if(sum>0){let x=Math.random()*sum;for(let k=0;k<RN.length;k++){x-=wt[k];if(x<0){r=k;break}r=k}}else r=Math.floor(Math.random()*RN.length);
+  const pool=CARDS.filter(c=>c.r===r);return pool[Math.floor(Math.random()*pool.length)].id;
+}
+function drawCards(x,wt){const o=[];for(let k=0;k<x;k++)o.push({id:pickCard(wt),num:rnd(1000)});return o}
+
+/* ===== Oberfläche ===== */
+function optsHTML(){return `<div class="opts"><label><input type="checkbox" class="optBack" ${OPT.back?'checked':''}> Rückseiten mitdrucken (doppelseitig)</label><label><input type="checkbox" class="optMarks" ${OPT.marks?'checked':''}> Schnittmarken</label></div>`}
+function updateBadge(){$('#tabDruck').textContent='Druckliste'+(Q.length?` (${Q.length})`:'')}
+function addQ(list){Q.push(...list);save();updateBadge();toast(`${list.length} Karte${list.length===1?'':'n'} zur Druckliste hinzugefügt`)}
+
+function renderCatalog(){
+  const chips=['Alle',...RN].map((n,i)=>`<button class="chip${FILTER===i-1?' on':''}" data-act="filter" data-v="${i-1}" aria-pressed="${FILTER===i-1}">${n}</button>`).join('');
+  const list=CARDS.filter(c=>FILTER<0||c.r===FILTER);
+  $('#katalog').innerHTML=`<div class="chips">${chips}</div><div class="grid">${list.map(c=>`<button class="cbtn" data-act="open" data-id="${c.id}" aria-label="${esc(c.name)}, ${RN[c.r]}, öffnen">${cardHTML(c.id,demoNum(c.id),'round')}</button>`).join('')}</div>`;
+}
+function openCard(id){
+  DLG={id,num:rnd(1000),cnt:1};
+  const c=CARDS[id];
+  const wins=[...WIN[id]].sort((a,b)=>a-b),loses=CARDS.map(x=>x.id).filter(i=>i!==id&&!WIN[id].has(i));
+  const rc=a=>a.map(i=>`<span class="rc r${CARDS[i].r}">${esc(CARDS[i].name)}</span>`).join('');
+  $('#dlgBody').innerHTML=`<div class="dgrid"><div class="dcard" id="dCard">${cardHTML(id,DLG.num,'round')}</div><div class="dinfo">
+<h2>${esc(c.name)}</h2><div class="hint">${RN[c.r]}</div>
+<div class="row"><label for="dNum">Zahl (1–1000)</label><input id="dNum" type="number" min="1" max="1000" value="${DLG.num}"><button class="btn sec" data-act="dRoll">Würfeln</button></div>
+<div class="row"><label for="dCnt">Anzahl</label><input id="dCnt" type="number" min="1" max="50" value="1"><button class="btn" data-act="dAdd">Zur Druckliste</button></div>
+<p class="hint">Weitere Exemplare bekommen eigene Zufallszahlen.</p>
+<h3>Schlägt immer (${wins.length})</h3><div class="rcs">${rc(wins)}</div>
+<h3>Verliert immer (${loses.length})</h3><div class="rcs">${rc(loses)}</div>
+</div></div>`;
+  $('#dlg').showModal();
+}
+function dRefresh(){$('#dCard').innerHTML=cardHTML(DLG.id,DLG.num,'round')}
+
+function renderWeights(){
+  $('#wrow').innerHTML=RN.map((n,i)=>`<div><label for="w${i}">${n}</label><input class="wIn" id="w${i}" data-r="${i}" type="number" min="0" max="100" value="${WT[i]}"></div>`).join('');
+}
+function renderDraw(){
+  const o=$('#drawOut');
+  if(!DRAW.length){o.innerHTML='';return}
+  const cnt=RN.map((n,i)=>`${n} ${DRAW.filter(d=>CARDS[d.id].r===i).length}`).join(' · ');
+  const show=DRAW.slice(0,60);
+  o.innerHTML=`<div class="panel"><h2>${DRAW.length} Karten gezogen</h2><p class="sum">${cnt}</p>${optsHTML()}
+<div class="row"><button class="btn" data-act="printDraw">Diese Karten drucken (${pageCount(DRAW.length)} Seiten)</button><button class="btn sec" data-act="addDraw">Zur Druckliste hinzufügen</button><button class="btn sec" data-act="draw">Neu ziehen</button></div></div>
+<div class="grid small">${show.map(d=>cardHTML(d.id,d.num,'round')).join('')}</div>${DRAW.length>show.length?`<p class="hint">… und ${DRAW.length-show.length} weitere. Alle werden mitgedruckt.</p>`:''}`;
+}
+function renderQueue(){
+  const o=$('#queueOut'),p=$('#queuePrev');
+  $('#optsQ').innerHTML=optsHTML();
+  if(!Q.length){o.innerHTML='<p class="hint">Die Druckliste ist leer. Füge Karten im Katalog hinzu oder ziehe zufällige Karten.</p>';p.innerHTML='';return}
+  o.innerHTML=`<p class="sum">${Q.length} Karten · ${pageCount(Q.length)} Seiten (A4)</p>
+<div class="row"><button class="btn" data-act="printQ">Drucken</button><button class="btn sec" data-act="clearQ">Liste leeren</button></div>
+<div class="qwrap"><table class="q"><thead><tr><th>#</th><th>Karte</th><th>Zahl</th><th><span class="sr">Entfernen</span></th></tr></thead><tbody>${Q.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(CARDS[q.id].name)} <small>(${RN[CARDS[q.id].r]})</small></td><td>${q.num}</td><td><button class="x" data-act="rm" data-i="${i}" aria-label="${esc(CARDS[q.id].name)} entfernen">×</button></td></tr>`).join('')}</tbody></table></div>`;
+  const first=Q.slice(0,9);
+  p.innerHTML=`<div class="panel"><h2>Vorschau</h2><p class="hint">Erste Druckseite${OPT.back?' und Rückseite':''}. Gedruckt wird in Originalgröße auf A4: 3 × 3 Karten zu 63 × 88 mm. Im Druckdialog: Skalierung 100 % (nicht „An Seite anpassen“), Ränder keine, Hintergrundgrafiken an.</p><div class="preview">${sheetsHTML(first)}</div></div>`;
+}
+function fillFight(){
+  const opt=CARDS.map(c=>`<option value="${c.id}">${esc(c.name)} (${RN[c.r]})</option>`).join('');
+  $('#fa').innerHTML=opt;$('#fb').innerHTML=opt;$('#fb').value=String(IDX['Papier']);$('#fa').value=String(IDX['Stein']);
+}
+function fight(){
+  const a=+$('#fa').value,b=+$('#fb').value,na=clampNum($('#na').value,1,1000,1),nb=clampNum($('#nb').value,1,1000,1);
+  $('#ca').innerHTML=cardHTML(a,na,'round');$('#cb').innerHTML=cardHTML(b,nb,'round');
+  let t;
+  if(a===b){t=na>nb?`Spieler 1 gewinnt: gleiche Karte, Zahl ${na} schlägt ${nb}.`:nb>na?`Spieler 2 gewinnt: gleiche Karte, Zahl ${nb} schlägt ${na}.`:'Stich! Gleiche Karte und gleiche Zahl. Beide legen noch eine Karte.'}
+  else if(WIN[a].has(b))t=`Spieler 1 gewinnt: ${CARDS[a].name} schlägt ${CARDS[b].name}.`;
+  else t=`Spieler 2 gewinnt: ${CARDS[b].name} schlägt ${CARDS[a].name}.`;
+  $('#fres').textContent=t;
+}
+
+function showTab(t){
+  $$('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===t)));
+  $$('main > section').forEach(s=>{s.hidden=s.id!=='s-'+t});
+  if(t==='druck')renderQueue();
+  if(t==='kampf')fight();
+  window.scrollTo(0,0);
+}
+
+document.addEventListener('click',e=>{
+  const tb=e.target.closest('.tab');if(tb){showTab(tb.dataset.tab);return}
+  const t=e.target.closest('[data-act]');if(!t)return;
+  const act=t.dataset.act;
+  if(act==='filter'){FILTER=+t.dataset.v;renderCatalog()}
+  else if(act==='open')openCard(+t.dataset.id);
+  else if(act==='dClose')$('#dlg').close();
+  else if(act==='dRoll'){DLG.num=rnd(1000);$('#dNum').value=DLG.num;dRefresh()}
+  else if(act==='dAdd'){const cnt=clampNum($('#dCnt').value,1,50,1),l=[{id:DLG.id,num:DLG.num}];for(let k=1;k<cnt;k++)l.push({id:DLG.id,num:rnd(1000)});addQ(l)}
+  else if(act==='draw'){const x=clampNum($('#xCnt').value,1,500,9);$('#xCnt').value=x;DRAW=drawCards(x,WT);renderDraw()}
+  else if(act==='drawAll'){DRAW=CARDS.map(c=>({id:c.id,num:rnd(1000)}));renderDraw()}
+  else if(act==='printDraw')doPrint(DRAW);
+  else if(act==='addDraw'){addQ(DRAW)}
+  else if(act==='printQ')doPrint(Q);
+  else if(act==='clearQ'){Q=[];save();updateBadge();renderQueue()}
+  else if(act==='rm'){Q.splice(+t.dataset.i,1);save();updateBadge();renderQueue()}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='dNum'&&DLG){DLG.num=clampNum(t.value,1,1000,DLG.num);dRefresh()}
+  else if(t.classList.contains('wIn')){WT[+t.dataset.r]=Math.max(0,Number(t.value)||0);save()}
+  else if(['fa','fb','na','nb'].includes(t.id))fight();
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.classList.contains('optBack')||t.classList.contains('optMarks')){
+    if(t.classList.contains('optBack'))OPT.back=t.checked;else OPT.marks=t.checked;
+    save();$$('.optBack').forEach(x=>x.checked=OPT.back);$$('.optMarks').forEach(x=>x.checked=OPT.marks);
+    if(!$('#s-druck').hidden)renderQueue();else renderDraw();
+  }
+});
+
+$('#sub').textContent='Kartengenerator und Druckwerkstatt · '+N+' Karten';load();updateBadge();renderCatalog();renderWeights();fillFight();showTab('katalog');
+</script>
+</body>
+</html>
