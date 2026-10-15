@@ -337,9 +337,9 @@ function doPrint(list){
   if($('#dlg').open)$('#dlg').close();
   $('#printRoot').innerHTML=sheetsHTML(list);
   const go=()=>{try{window.print()}catch(e){toast('Drucken nicht möglich: '+e.message)}};
-  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(go,200));
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(go,400))));
 }
-window.addEventListener('afterprint',()=>{$('#printRoot').innerHTML=''});
+/* printRoot bleibt nach dem Drucken gefüllt: Mobile-Browser feuern afterprint oft, bevor die Druckvorschau fertig gerendert ist (leere Seiten). Beim nächsten Druck wird der Inhalt ersetzt. */
 
 /* ===== Ziehen ===== */
 function pickCard(wt){
