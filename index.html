@@ -154,6 +154,12 @@ dialog::backdrop{background:rgba(20,20,40,.6)}
   .app,#toast,dialog{display:none!important}
   #printRoot{display:block}
   .frame,.art::after{animation:none!important}
+  /* Mythisch im Druck: ohne Text-Verlauf, Mischmodus und Glanz, die in PDF und Druckertreibern Kästchen, Striche und Grauschleier erzeugen */
+  .r5{--frame:linear-gradient(135deg,#ff3b6b 0%,#ffb400 25%,#3bffb0 50%,#3b9bff 75%,#b43bff 100%)}
+  .r5 .name,.r5 .abn{background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+  .r5 .rar{background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;color:#ffd36b!important;-webkit-text-fill-color:#ffd36b!important}
+  .r5 .art::after{display:none!important}
+  .round.r5{filter:none!important}
   .sheet{break-after:page;page-break-after:always;box-shadow:none;zoom:1}
   .sheet:last-child{break-after:auto;page-break-after:auto}
 }
