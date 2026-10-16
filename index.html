@@ -716,7 +716,7 @@ function drawCards(x,wt){const o=[];for(let k=0;k<x;k++)o.push({id:pickCard(wt),
 const condTxt=z=>z.min&&z.max?`Zahl ${z.min} bis ${z.max}`:z.min?`Zahl ab ${z.min}`:z.max?`Zahl bis ${z.max}`:'';
 const ingTxt=z=>`${z.n>1?z.n+'× ':''}${z.card}${condTxt(z)?` (${condTxt(z)})`:''}`;
 const ingChip=z=>`<span class="rc r${CARDS[IDX[z.card]].r}">${esc(ingTxt(z))}</span>`;
-const stars=r=>'★'.repeat(r)+'☆'.repeat(5-r);
+const stars=r=>'★'.repeat(r)+'☆'.repeat(Math.max(0,6-r));
 function matchRecipe(rec,pile){
   const slots=[];rec.forEach(z=>{for(let k=0;k<z.n;k++)slots.push(z)});
   const owner=new Array(pile.length).fill(-1);
@@ -741,7 +741,7 @@ function renderCraft(){
   $('#craftChk').innerHTML=`<h2>Was kann ich craften?</h2><p class="hint">Trag die Karten ein, die du abgeben könntest. Das Spiel prüft jedes Rezept einzeln, welche damit gehen und was noch fehlt. Eine Karte kannst du aber nur für ein Rezept abgeben.</p><div class="pile">${pileH}</div>
 <div class="row"><label for="pCard" class="sr">Karte</label><select id="pCard">${sel}</select><label for="pNum" class="sr">Zahl</label><input id="pNum" type="number" min="1" max="1000" value="500" inputmode="numeric" aria-label="Zahl auf der Karte"><button class="btn" data-act="pAdd">Hinzufügen</button>${PILE.length?'<button class="btn sec" data-act="pClear">Leeren</button>':''}</div>
 ${PILE.length?`<p class="sum">${can.length} von ${CRAFTS.length} Rezepten möglich</p>${resH}`:''}`;
-  const byR=[1,2,3,4,5].map(r=>{const l=CRAFTS.filter(c=>c.r===r);if(!l.length)return '';
+  const byR=[1,2,3,4,5,6].map(r=>{const l=CRAFTS.filter(c=>c.r===r);if(!l.length)return '';
     return `<h3>${RN[r]} <span class="stars" title="Schwierigkeit">${stars(r)}</span></h3>`+l.map(c=>`<div class="rec"><div class="rh"><button class="lnk" data-act="open" data-id="${c.id}">${esc(c.name)}</button></div><div class="rcs">${c.craft.map(ingChip).join('')}</div></div>`).join('')}).join('');
   $('#craftBook').innerHTML=`<h2>Rezeptbuch</h2><p class="hint">Je besser die Karte, die du bekommst, desto schwerer das Rezept: mehr Karten, seltenere Karten und strengere Zahlen. Je kleiner die Zahl auf einer Karte, desto besser und hochwertiger ist sie. „Zahl bis 100“ heißt, die Zutat-Karte darf höchstens die Zahl 100 haben (zum Beispiel Edelmetall).</p>${byR}`;
 }
