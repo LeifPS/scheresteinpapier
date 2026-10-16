@@ -101,8 +101,8 @@ dialog::backdrop{background:rgba(20,20,40,.6)}
 .zahl span{font-weight:800;font-size:2.6667cqw;line-height:3.3333cqw;letter-spacing:.12em;text-transform:uppercase}
 .zahl b{font-family:'Alfa Slab One',Georgia,serif;font-weight:400;font-size:5.6667cqw;line-height:6.0000cqw}
 .zahl.z4 b{font-size:4.3333cqw}
-.ab{flex:none;height:28.0000cqw;padding:2.6667cqw 3.3333cqw;border-radius:3.3333cqw;border:0.5000cqw solid var(--acc);background:rgba(242,214,117,.1);display:flex;flex-direction:column;gap:0.6667cqw;overflow:hidden}
-.abn{font-family:'Alfa Slab One',Georgia,serif;font-size:4.6667cqw;line-height:6.0000cqw;color:var(--acc)}
+.ab{flex:none;height:13.3333cqw;padding:0 3.3333cqw;border-radius:3.3333cqw;border:0.5000cqw solid var(--acc);background:rgba(242,214,117,.1);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;overflow:hidden}
+.abn{font-family:'Alfa Slab One',Georgia,serif;font-size:6.0000cqw;line-height:7.3333cqw;white-space:nowrap;color:var(--acc)}
 .abt{font-weight:600;font-size:4.0000cqw;line-height:5.0000cqw;color:var(--ink)}
 .r0{--frame:#8C8676;--ground:#F1ECDF;--art:#DDD5C2;--ink:#3A362D;--acc:#6B6555}
 .r1{--frame:#1F7A57;--ground:#E6F2EB;--art:#CBE5D6;--ink:#11382A;--acc:#1F7A57}
@@ -649,7 +649,7 @@ function cardHTML(id,num,cls){
   return `<div class="card r${c.r} ${cls||''}${shiny?' shiny':''}"><div class="frame"><div class="inner">
 <div class="hd"><div class="nm"><div class="name" style="font-size:${(fs/3).toFixed(3)}cqw">${esc(n)}</div><div class="rar">${esc(RN[c.r])}</div></div>${(c.r>=4&&SYMR[c.r])?`<div class="gem sym"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${SYMP[SYMR[c.r]]}"/></svg></div>`:'<div class="gem"></div>'}</div>
 <div class="art"><svg viewBox="0 0 200 160" role="img" aria-label="${esc(n)}">${ICON[n](INK[c.r])}</svg>${sp}<div class="zahl${num>=1000?' z4':''}"><span>Zahl</span><b>${num}</b></div></div>
-${c.ab?`<div class="ab"><div class="abn">${esc(c.ab[0])}</div><div class="abt">${esc(c.ab[1])}</div></div>`:''}
+${c.ab?`<div class="ab"><div class="abn">${esc(c.ab[0])}</div></div>`:''}
 </div></div></div>`;
 }
 function backHTML(cls){
