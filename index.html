@@ -804,8 +804,8 @@ function valInfo(id){
 }
 let VINFO_NEEDMAX=0;
 const _sm={};function sMean(r){if(_sm[r]==null){const l=CARDS.filter(c=>c.r===r&&!c.craft);_sm[r]=l.length?l.reduce((a,c)=>a+WIN[c.id].size/(N-1),0)/l.length:.5}return _sm[r]}
-/* Zahl-Faktor: ab 100 nur leicht (1000 → 0,85 … 100 → 1,15), unter 100 „schillernd“ sprunghaft (99 → 1,6 … 1 → 40) */
-const numMult=n=>n>=100?.85+.3*(1000-n)/900:1.6*Math.pow(25,(99-n)/98);
+/* Zahl-Faktor: ab 100 nur leicht (1000 → 0,85 … 100 → 1,15), unter 100 „schillernd“ sprunghaft (99 → 1,4 … 1 → 3) */
+const numMult=n=>n>=100?.85+.3*(1000-n)/900:1.4*Math.pow(3/1.4,(99-n)/98);
 function softL(l){return l<4.3?l:4.3+.7*Math.tanh((l-4.3)/.7)}
 function wertOf(id,num){
   const o=valInfo(id);const m=num==null?1:numMult(num);
