@@ -38,6 +38,8 @@ label{font-weight:800;font-size:14px}
 .grid.small{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
 .cbtn{appearance:none;border:0;background:none;padding:0;cursor:pointer;border-radius:20px;display:block;width:100%;text-align:left}
 .cbtn .card,.grid .card{--w:100%}
+.wv{font-weight:900;color:var(--navy)}.wtag{display:block;text-align:center;margin-top:4px;font-size:14px}
+table.wt td{padding:4px 8px;vertical-align:top}table.wt td:first-child{font-weight:800;white-space:nowrap}
 @media (hover:hover) and (prefers-reduced-motion:no-preference){.cbtn{transition:transform .15s}.cbtn:hover{transform:translateY(-3px)}}
 .wrow{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
 .wrow div{display:flex;flex-direction:column;gap:4px}
@@ -69,7 +71,7 @@ dialog{border:0;border-radius:16px;padding:0;width:min(760px,94vw);max-height:92
 dialog::backdrop{background:rgba(20,20,40,.6)}
 .dgrid{display:grid;grid-template-columns:auto 1fr;gap:20px;padding:20px}
 @media (max-width:640px){.dgrid{grid-template-columns:1fr}}
-.dcard{display:flex;justify-content:center}
+.dcard{display:flex;justify-content:center;align-items:flex-start;align-self:start}
 .dcard .card{--w:min(300px,70vw)}
 .dinfo h2{font-size:24px;margin-bottom:8px}
 .dinfo h3{font-size:15px;margin:10px 0 2px}
@@ -273,7 +275,7 @@ dialog::backdrop{background:rgba(20,20,40,.6)}
 </header>
 <main>
   <section id="s-katalog" role="tabpanel">
-    <div class="panel"><h2>Katalog</h2><p class="hint">Tippe auf eine Karte: Du siehst, wen sie immer schlägt, kannst eine Zahl festlegen und sie zur Druckliste hinzufügen. Die Zahlen im Katalog sind nur Beispiele. Karten mit Rezept gibt es nur durch Tauschen (Reiter Crafting).</p></div>
+    <div class="panel"><h2>Katalog</h2><p class="hint">Tippe auf eine Karte: Du siehst, wen sie immer schlägt, kannst eine Zahl festlegen und sie zur Druckliste hinzufügen. Die Zahlen im Katalog sind nur Beispiele. Unter jeder Karte steht ihr Wert in Schnuck (₪), zum fairen Tauschen. Karten mit Rezept gibt es nur durch Tauschen (Reiter Crafting).</p></div>
     <div id="katalog"></div>
   </section>
 
@@ -283,6 +285,7 @@ dialog::backdrop{background:rgba(20,20,40,.6)}
       <p class="hint">Jede gezogene Karte bekommt ihre eigene Zufallszahl von 1 bis 1000. Seltene Karten kommen seltener. Crafting-Karten werden nicht gezogen, man bekommt sie nur durch Tauschen (siehe Reiter Crafting).</p>
       <div class="row"><label for="xCnt">Anzahl Karten</label><input id="xCnt" type="number" min="1" max="500" value="9" inputmode="numeric"></div>
       <div class="wrow" id="wrow"></div>
+      <p class="sum" id="packWert"></p>
       <p class="hint">Die Prozentwerte sind Gewichte pro Seltenheit. Sie müssen nicht genau 100 ergeben.</p>
       <div class="row"><button class="btn" data-act="draw">Karten ziehen</button><button class="btn sec" data-act="drawAll">Alle Grundkarten einmal</button></div>
     </div>
@@ -347,7 +350,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clea
 
 /* ===== Zustand ===== */
 const KEY='ssp-karten-v1';
-let Q=[],PILE=[],OPT={back:true,marks:true},DRAW=[],FILTER=-1,DLG=null,WT=[40,30,18,9,3,1,0.5,0.3,0.1,0.03,0];
+let Q=[],PILE=[],OPT={back:true,marks:true},DRAW=[],FILTER=-1,SORT="r",DLG=null,WT=[40,30,18,9,3,1,0.5,0.3,0.1,0.03,0];
 function load(){try{const j=JSON.parse(localStorage.getItem(KEY)||'null');if(!j)return;
   if(Array.isArray(j.q))Q=j.q.filter(x=>x&&Number.isInteger(x.id)&&CARDS[x.id]&&Number.isInteger(x.num)&&x.num>=1&&x.num<=1000).map(x=>({id:x.id,num:x.num}));
   if(Array.isArray(j.pile))PILE=j.pile.filter(x=>x&&Number.isInteger(x.id)&&CARDS[x.id]&&Number.isInteger(x.num)&&x.num>=1&&x.num<=1000).map(x=>({id:x.id,num:x.num}));
@@ -768,6 +771,72 @@ ${PILE.length?`<p class="sum">${can.length} von ${CRAFTS.length} Rezepten mögli
   $('#craftBook').innerHTML=`<h2>Rezeptbuch</h2><p class="hint">Je besser die Karte, die du bekommst, desto schwerer das Rezept: mehr Karten, seltenere Karten und strengere Zahlen. Je kleiner die Zahl auf einer Karte, desto besser und hochwertiger ist sie. „Zahl bis 100“ heißt, die Zutat-Karte darf höchstens die Zahl 100 haben (zum Beispiel Edelmetall).</p>${byR}`;
 }
 
+
+/* ===== Schnuck-Wert (₪) ===== */
+/* Wert = 10 · 10^(3,5 · (0,45·Stärke + 0,35·Seltenheit + 0,20·Crafting)) · Zahl-Faktor, gerundet auf 10er, 10 bis 100.000 */
+const WT0=[40,30,18,9,3,1,0.5,0.3,0.1,0.03];
+const VW={s:.45,r:.35,c:.20,dec:3.5};
+const fmtV=v=>v.toLocaleString('de-DE')+' ₪';
+const _vm={};
+function valInfo(id){
+  if(_vm[id])return _vm[id];
+  const c=CARDS[id],w=WIN[id].size,l=N-1-w;
+  const S=w/(w+l);
+  const sum0=WT0.reduce((a,b)=>a+b,0);
+  const pk=r=>{const p=WT0[r]/sum0;return 1/(1-Math.pow(1-p,9))};
+  const Pmax=pk(WT0.length-1);
+  let packs=null,R;
+  if(c.ex)R=1.3;else{packs=pk(c.r);R=Math.log(packs)/Math.log(Pmax)}
+  const nr=BASE.filter(b=>b.r===c.r).length||1,p1=WT0[c.r]/sum0/nr,packsOne=1/(1-Math.pow(1-p1,9));
+  /* Benötigung (Zutat in Rezepten) bzw. Schwierigkeit (Rezeptkarte) */
+  let C,need=0;
+  if(c.craft)C=.3+.2*c.r/6;
+  else{CRAFTS.forEach(x=>x.craft.forEach(z=>{if(z.card===c.name)need+=z.n*x.r}));
+    if(!VINFO_NEEDMAX)VINFO_NEEDMAX=Math.max(...BASE.map(b=>{let n=0;CRAFTS.forEach(x=>x.craft.forEach(z=>{if(z.card===b.name)n+=z.n*x.r}));return n}));
+    C=.5*Math.min(1,Math.log(1+need)/Math.log(1+VINFO_NEEDMAX))}
+  const lg=VW.dec*(VW.s*S+VW.r*R+VW.c*C);
+  const o={S,R,C,w,l,packs,packsOne,need,lg,base:0};
+  _vm[id]=o;
+  o.base=Math.pow(10,lg)*10;
+  if(c.craft&&!o.busy){o.busy=1;const ing=c.craft.reduce((a,z)=>a+z.n*valInfo(IDX[z.card]).base,0);o.ing=ing;o.base=Math.max(o.base,Math.min(ing*(.7+.1*c.r),o.base*1.5));o.busy=0}
+  return o;
+}
+let VINFO_NEEDMAX=0;
+/* Zahl-Faktor: ab 100 nur leicht (1000 → 0,85 … 100 → 1,15), unter 100 „schillernd“ sprunghaft (99 → 1,6 … 1 → 40) */
+const numMult=n=>n>=100?.85+.3*(1000-n)/900:1.6*Math.pow(25,(99-n)/98);
+function softL(l){return l<3.2?l:3.2+.8*Math.tanh((l-3.2)/.8)}
+function wertOf(id,num){
+  const o=valInfo(id);const m=num==null?1:numMult(num);
+  const l=softL(Math.log10(o.base/10*m));
+  return Math.min(100000,Math.max(10,Math.round(Math.pow(10,l)*10/10)*10));
+}
+function packWert(wt){
+  const sum=wt.reduce((a,b)=>a+b,0);if(sum<=0)return 0;
+  if(!packWert.m){packWert.m={}}
+  let tot=0;
+  for(let r=0;r<RN.length-1;r++){
+    const pool=BASE.filter(c=>c.r===r);if(!pool.length||!wt[r])continue;
+    if(packWert.m[r]==null){let a=0;pool.forEach(c=>{let s=0;for(let n=1;n<=1000;n++)s+=wertOf(c.id,n);a+=s/1000});packWert.m[r]=a/pool.length}
+    tot+=wt[r]/sum*packWert.m[r];
+  }
+  return Math.round(tot*9);
+}
+const pk1=x=>{const n=Math.max(1,Math.round(x));return n.toLocaleString('de-DE')+(n===1?' Pack':' Packs')};
+function wertHTML(id,num){
+  const o=valInfo(id),c=CARDS[id],base=wertOf(id,null),cur=wertOf(id,num);
+  const pct=x=>Math.round(x*100)+' %';
+  const ex=[1,50,99,100,500,1000].map(n=>`<span class="rc r0">Zahl ${n}: ${fmtV(wertOf(id,n))}</span>`).join('');
+  return `<h3>Wert: <span class="wv">${fmtV(cur)}</span></h3>
+<p class="hint">Mit der Zahl ${num} ist diese Karte ${fmtV(cur)} wert. Ohne Zahl-Bonus (Basiswert) sind es ${fmtV(base)}.</p>
+<table class="q wt"><tbody>
+<tr><td>Stärke</td><td>${o.w} Siege, ${o.l} Niederlagen (${pct(o.S)})</td></tr>
+<tr><td>Seltenheit</td><td>${c.ex?'nicht erhältlich (Exklusiv)':c.craft?'nur durch Crafting (wie '+RN[c.r]+')':'ca. '+pk1(o.packs)+' bis irgendeine '+RN[c.r]+'-Karte kommt, ca. '+pk1(o.packsOne)+' für genau diese'}</td></tr>
+<tr><td>Crafting</td><td>${c.craft?'Rezeptkarte, Schwierigkeit '+stars(c.r):(o.need?'wird in Rezepten gebraucht (Gewicht '+o.need+')':'wird für kein Rezept gebraucht')}</td></tr>
+<tr><td>Zahl</td><td>Faktor ×${numMult(num).toFixed(2).replace('.',',')}${num<100?' (schillernd)':''}</td></tr>
+</tbody></table>
+<div class="rcs">${ex}</div>`;
+}
+
 /* ===== Oberfläche ===== */
 function optsHTML(){return `<div class="opts"><label><input type="checkbox" class="optBack" ${OPT.back?'checked':''}> Rückseiten mitdrucken (doppelseitig)</label><label><input type="checkbox" class="optMarks" ${OPT.marks?'checked':''}> Schnittmarken</label></div>`}
 function updateBadge(){$('#tabDruck').textContent='Druckliste'+(Q.length?` (${Q.length})`:'')}
@@ -775,8 +844,9 @@ function addQ(list){Q.push(...list);save();updateBadge();toast(`${list.length} K
 
 function renderCatalog(){
   const chips=['Alle',...RN,'Crafting'].map((n,i)=>{const v=i===RN.length+1?-2:i-1;return `<button class="chip${FILTER===v?' on':''}" data-act="filter" data-v="${v}" aria-pressed="${FILTER===v}">${n}</button>`}).join('');
-  const list=CARDS.filter(c=>FILTER===-1||(FILTER===-2?!!c.craft:c.r===FILTER)).sort((a,b)=>a.r-b.r||a.id-b.id);
-  $('#katalog').innerHTML=`<div class="chips">${chips}</div><div class="grid">${list.map(c=>`<button class="cbtn" data-act="open" data-id="${c.id}" aria-label="${esc(c.name)}, ${RN[c.r]}, öffnen">${cardHTML(c.id,demoNum(c.id),'round')}</button>`).join('')}</div>`;
+  const list=CARDS.filter(c=>FILTER===-1||(FILTER===-2?!!c.craft:c.r===FILTER)).sort((a,b)=>SORT==='up'?wertOf(a.id)-wertOf(b.id)||a.id-b.id:SORT==='down'?wertOf(b.id)-wertOf(a.id)||a.id-b.id:a.r-b.r||a.id-b.id);
+  const srt=`<div class="row"><label for="sortSel">Sortieren</label><select id="sortSel"><option value="r"${SORT==='r'?' selected':''}>Seltenheit</option><option value="down"${SORT==='down'?' selected':''}>Wert, höchster zuerst</option><option value="up"${SORT==='up'?' selected':''}>Wert, niedrigster zuerst</option></select></div>`;
+  $('#katalog').innerHTML=`<div class="chips">${chips}</div>${srt}<div class="grid">${list.map(c=>`<button class="cbtn" data-act="open" data-id="${c.id}" aria-label="${esc(c.name)}, ${RN[c.r]}, Wert ${wertOf(c.id)} Schnuck, öffnen">${cardHTML(c.id,demoNum(c.id),'round')}<span class="wv wtag">${fmtV(wertOf(c.id))}</span></button>`).join('')}</div>`;
 }
 function openCard(id){
   DLG={id,num:rnd(1000),cnt:1};
@@ -790,23 +860,25 @@ ${c.ab?`<h3>Fähigkeit: ${esc(c.ab[0])}</h3><p class="abdesc">${esc(c.ab[1])}</p
 <div class="row"><label for="dNum">Zahl (1–1000)</label><input id="dNum" type="number" min="1" max="1000" value="${DLG.num}"><button class="btn sec" data-act="dRoll">Würfeln</button></div>
 <div class="row"><label for="dCnt">Anzahl</label><input id="dCnt" type="number" min="1" max="50" value="1"><button class="btn" data-act="dAdd">Zur Druckliste</button></div>
 <p class="hint">Weitere Exemplare bekommen eigene Zufallszahlen.</p>
+<div id="dWert">${wertHTML(id,DLG.num)}</div>
 ${c.craft?`<h3>Rezept <span class="stars">${stars(c.r)}</span></h3><div class="rcs">${c.craft.map(ingChip).join('')}</div><p class="hint">Du gibst diese Karten ab und bekommst diese Karte mit eigener Zufallszahl.</p>`:(()=>{const u=CRAFTS.filter(x=>x.craft.some(z=>z.card===c.name));return u.length?`<h3>Zutat für</h3><div class="rcs">${u.map(x=>`<span class="rc r${x.r}">${esc(x.name)}</span>`).join('')}</div>`:''})()}
 <h3>Schlägt immer (${wins.length})</h3><div class="rcs">${rc(wins)}</div>
 <h3>Verliert immer (${loses.length})</h3><div class="rcs">${rc(loses)}</div>
 </div></div>`;
   $('#dlg').showModal();
 }
-function dRefresh(){$('#dCard').innerHTML=cardHTML(DLG.id,DLG.num,'round')}
+function dRefresh(){$('#dCard').innerHTML=cardHTML(DLG.id,DLG.num,'round');const w=$('#dWert');if(w)w.innerHTML=wertHTML(DLG.id,DLG.num)}
 
+function showPW(){const e=$('#packWert');if(e)e.innerHTML=`Erwarteter Wert eines Packs (9 Karten): <b>${fmtV(packWert(WT))}</b> im Schnitt`}
 function renderWeights(){
-  $('#wrow').innerHTML=RN.slice(0,-1).map((n,i)=>`<div><label for="w${i}">${n}</label><input class="wIn" id="w${i}" data-r="${i}" type="number" min="0" max="100" step="any" value="${WT[i]}"></div>`).join('');
+  $('#wrow').innerHTML=RN.slice(0,-1).map((n,i)=>`<div><label for="w${i}">${n}</label><input class="wIn" id="w${i}" data-r="${i}" type="number" min="0" max="100" step="any" value="${WT[i]}"></div>`).join('');showPW();
 }
 function renderDraw(){
   const o=$('#drawOut');
   if(!DRAW.length){o.innerHTML='';return}
   const cnt=RN.slice(0,-1).map((n,i)=>`${n} ${DRAW.filter(d=>CARDS[d.id].r===i).length}`).join(' · ');
   const show=DRAW.slice(0,60);
-  o.innerHTML=`<div class="panel"><h2>${DRAW.length} Karten gezogen</h2><p class="sum">${cnt}</p>${optsHTML()}
+  o.innerHTML=`<div class="panel"><h2>${DRAW.length} Karten gezogen</h2><p class="sum">${cnt}</p><p class="sum">Gesamtwert: <b>${fmtV(DRAW.reduce((a,d)=>a+wertOf(d.id,d.num),0))}</b></p>${optsHTML()}
 <div class="row"><button class="btn" data-act="printDraw">Diese Karten drucken (${pageCount(DRAW.length)} Seiten)</button><button class="btn sec" data-act="addDraw">Zur Druckliste hinzufügen</button><button class="btn sec" data-act="draw">Neu ziehen</button></div></div>
 <div class="grid small">${show.map(d=>cardHTML(d.id,d.num,'round')).join('')}</div>${DRAW.length>show.length?`<p class="hint">… und ${DRAW.length-show.length} weitere. Alle werden mitgedruckt.</p>`:''}`;
 }
@@ -814,9 +886,9 @@ function renderQueue(){
   const o=$('#queueOut'),p=$('#queuePrev');
   $('#optsQ').innerHTML=optsHTML();
   if(!Q.length){o.innerHTML='<p class="hint">Die Druckliste ist leer. Füge Karten im Katalog hinzu oder ziehe zufällige Karten.</p>';p.innerHTML='';return}
-  o.innerHTML=`<p class="sum">${Q.length} Karten · ${pageCount(Q.length)} Seiten (A4)</p>
+  o.innerHTML=`<p class="sum">${Q.length} Karten · ${pageCount(Q.length)} Seiten (A4) · Gesamtwert ${fmtV(Q.reduce((a,q)=>a+wertOf(q.id,q.num),0))}</p>
 <div class="row"><button class="btn" data-act="printQ">Drucken</button><button class="btn sec" data-act="clearQ">Liste leeren</button></div>
-<div class="qwrap"><table class="q"><thead><tr><th>#</th><th>Karte</th><th>Zahl</th><th><span class="sr">Entfernen</span></th></tr></thead><tbody>${Q.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(CARDS[q.id].name)} <small>(${RN[CARDS[q.id].r]})</small></td><td>${q.num}</td><td><button class="x" data-act="rm" data-i="${i}" aria-label="${esc(CARDS[q.id].name)} entfernen">×</button></td></tr>`).join('')}</tbody></table></div>`;
+<div class="qwrap"><table class="q"><thead><tr><th>#</th><th>Karte</th><th>Zahl</th><th>Wert</th><th><span class="sr">Entfernen</span></th></tr></thead><tbody>${Q.map((q,i)=>`<tr><td>${i+1}</td><td>${esc(CARDS[q.id].name)} <small>(${RN[CARDS[q.id].r]})</small></td><td>${q.num}</td><td>${fmtV(wertOf(q.id,q.num))}</td><td><button class="x" data-act="rm" data-i="${i}" aria-label="${esc(CARDS[q.id].name)} entfernen">×</button></td></tr>`).join('')}</tbody></table></div>`;
   const first=Q.slice(0,9);
   p.innerHTML=`<div class="panel"><h2>Vorschau</h2><p class="hint">Erste Druckseite${OPT.back?' und Rückseite':''}. Gedruckt wird in Originalgröße auf A4: 3 × 3 Karten zu 63 × 88 mm. Im Druckdialog: Skalierung 100 % (nicht „An Seite anpassen“), Ränder keine, Hintergrundgrafiken an.</p><div class="preview">${sheetsHTML(first)}</div></div>`;
 }
@@ -863,10 +935,11 @@ document.addEventListener('click',e=>{
   else if(act==='clearQ'){Q=[];save();updateBadge();renderQueue()}
   else if(act==='rm'){Q.splice(+t.dataset.i,1);save();updateBadge();renderQueue()}
 });
+document.addEventListener('change',e=>{if(e.target.id==='sortSel'){SORT=e.target.value;renderCatalog()}});
 document.addEventListener('input',e=>{
   const t=e.target;
   if(t.id==='dNum'&&DLG){DLG.num=clampNum(t.value,1,1000,DLG.num);dRefresh()}
-  else if(t.classList.contains('wIn')){WT[+t.dataset.r]=Math.max(0,Number(t.value)||0);save()}
+  else if(t.classList.contains('wIn')){WT[+t.dataset.r]=Math.max(0,Number(t.value)||0);save();showPW()}
   else if(['fa','fb','na','nb'].includes(t.id))fight();
 });
 document.addEventListener('change',e=>{
