@@ -773,9 +773,9 @@ ${PILE.length?`<p class="sum">${can.length} von ${CRAFTS.length} Rezepten mögli
 
 
 /* ===== Schnuck-Wert (₪) ===== */
-/* Wert = 10 · 10^(4,3 · (0,25·Stärke + 0,55·Seltenheit + 0,20·Crafting)) · Zahl-Faktor, gerundet auf 10er, 10 bis 100.000 */
+/* Wert = 10 · 3^Seltenheitsstufe (jede Stufe ×3) · Stärke-Faktor (ggü. dem Schnitt der Seltenheit, bis ca. ×3) · Crafting-Faktor (×1 bis ×2) · Zahl-Faktor; 10er-Schritte, 10 bis 1.000.000 */
 const WT0=[40,30,18,9,3,1,0.5,0.3,0.1,0.03];
-const VW={s:.25,r:.55,c:.20,dec:4.3};
+const VW={step:3};
 const fmtV=v=>v.toLocaleString('de-DE')+' ₪';
 const _vm={};
 function valInfo(id){
@@ -794,7 +794,8 @@ function valInfo(id){
   else{CRAFTS.forEach(x=>x.craft.forEach(z=>{if(z.card===c.name)need+=z.n*x.r}));
     if(!VINFO_NEEDMAX)VINFO_NEEDMAX=Math.max(...BASE.map(b=>{let n=0;CRAFTS.forEach(x=>x.craft.forEach(z=>{if(z.card===b.name)n+=z.n*x.r}));return n}));
     C=.5*Math.min(1,Math.log(1+need)/Math.log(1+VINFO_NEEDMAX))}
-  const lg=VW.dec*(VW.s*S+VW.r*R+VW.c*C);
+  const Sm=sMean(c.r),fs=Math.pow(3,3*(S-Sm)),fc=1+C;
+  const lg=c.r*Math.log10(3)+Math.log10(fs*fc);
   const o={S,R,C,w,l,packs,packsOne,need,lg,base:0};
   _vm[id]=o;
   o.base=Math.pow(10,lg)*10;
@@ -802,13 +803,14 @@ function valInfo(id){
   return o;
 }
 let VINFO_NEEDMAX=0;
+const _sm={};function sMean(r){if(_sm[r]==null){const l=CARDS.filter(c=>c.r===r&&!c.craft);_sm[r]=l.length?l.reduce((a,c)=>a+WIN[c.id].size/(N-1),0)/l.length:.5}return _sm[r]}
 /* Zahl-Faktor: ab 100 nur leicht (1000 → 0,85 … 100 → 1,15), unter 100 „schillernd“ sprunghaft (99 → 1,6 … 1 → 40) */
 const numMult=n=>n>=100?.85+.3*(1000-n)/900:1.6*Math.pow(25,(99-n)/98);
-function softL(l){return l<3.4?l:3.4+.6*Math.tanh((l-3.4)/.6)}
+function softL(l){return l<4.3?l:4.3+.7*Math.tanh((l-4.3)/.7)}
 function wertOf(id,num){
   const o=valInfo(id);const m=num==null?1:numMult(num);
   const l=softL(Math.log10(o.base/10*m));
-  return Math.min(100000,Math.max(10,Math.round(Math.pow(10,l)*10/10)*10));
+  return Math.min(1000000,Math.max(10,Math.round(Math.pow(10,l)*10/10)*10));
 }
 function packWert(wt){
   const sum=wt.reduce((a,b)=>a+b,0);if(sum<=0)return 0;
@@ -827,10 +829,10 @@ function wertHTML(id,num){
   const pct=x=>Math.round(x*100)+' %';
   const ex=[1,50,99,100,500,1000].map(n=>`<span class="rc r0">Zahl ${n}: ${fmtV(wertOf(id,n))}</span>`).join('');
   return `<h3>Wert: <span class="wv">${fmtV(cur)}</span></h3>
-<p class="hint">Mit der Zahl ${num} ist diese Karte ${fmtV(cur)} wert. Ohne Zahl-Bonus (Basiswert) sind es ${fmtV(base)}.</p>
+<p class="hint">Mit der Zahl ${num} ist diese Karte ${fmtV(cur)} wert (Schnitt der Seltenheit ${RN[c.r]}: ${fmtV(10*Math.pow(3,c.r))}). Ohne Zahl-Bonus (Basiswert) sind es ${fmtV(base)}.</p>
 <table class="q wt"><tbody>
 <tr><td>Stärke</td><td>${o.w} Siege, ${o.l} Niederlagen (${pct(o.S)})</td></tr>
-<tr><td>Seltenheit</td><td>${c.ex?'nicht erhältlich (Exklusiv)':c.craft?'nur durch Crafting (wie '+RN[c.r]+')':'ca. '+pk1(o.packs)+' bis irgendeine '+RN[c.r]+'-Karte kommt, ca. '+pk1(o.packsOne)+' für genau diese'}</td></tr>
+<tr><td>Seltenheit</td><td>Grundwert ${fmtV(10*Math.pow(3,c.r))} (jede Stufe ×3). ${c.ex?'nicht erhältlich (Exklusiv)':c.craft?'nur durch Crafting (wie '+RN[c.r]+')':'ca. '+pk1(o.packs)+' bis irgendeine '+RN[c.r]+'-Karte kommt, ca. '+pk1(o.packsOne)+' für genau diese'}</td></tr>
 <tr><td>Crafting</td><td>${c.craft?'Rezeptkarte, Schwierigkeit '+stars(c.r):(o.need?'wird in Rezepten gebraucht (Gewicht '+o.need+')':'wird für kein Rezept gebraucht')}</td></tr>
 <tr><td>Zahl</td><td>Faktor ×${numMult(num).toFixed(2).replace('.',',')}${num<100?' (schillernd)':''}</td></tr>
 </tbody></table>
