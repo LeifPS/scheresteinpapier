@@ -773,9 +773,9 @@ ${PILE.length?`<p class="sum">${can.length} von ${CRAFTS.length} Rezepten mögli
 
 
 /* ===== Schnuck-Wert (₪) ===== */
-/* Wert = 10 · 3^Seltenheitsstufe (jede Stufe ×3) · Stärke-Faktor (ggü. dem Schnitt der Seltenheit, bis ×9) · Crafting-Faktor (×1 bis ×2) · Zahl-Faktor; 10er-Schritte, 10 bis 1.000.000 */
+/* Wert = 10 · 3^Seltenheitsstufe (jede Stufe ×3) · Stärke-Faktor (ggü. dem Schnitt der Seltenheit, bis ×5) · Crafting-Faktor (×1 bis ×2) · Zahl-Faktor; 10er-Schritte, 10 bis 1.000.000 */
 const WT0=[40,30,18,9,3,1,0.5,0.3,0.1,0.03];
-const VW={step:3,sk:9};
+const VW={step:3,sk:6};
 const fmtV=v=>v.toLocaleString('de-DE')+' ₪';
 const _vm={};
 function valInfo(id){
@@ -794,7 +794,7 @@ function valInfo(id){
   else{CRAFTS.forEach(x=>x.craft.forEach(z=>{if(z.card===c.name)need+=z.n*x.r}));
     if(!VINFO_NEEDMAX)VINFO_NEEDMAX=Math.max(...BASE.map(b=>{let n=0;CRAFTS.forEach(x=>x.craft.forEach(z=>{if(z.card===b.name)n+=z.n*x.r}));return n}));
     C=.5*Math.min(1,Math.log(1+need)/Math.log(1+VINFO_NEEDMAX))}
-  const Sm=sMean(c.r),fs=Math.min(9,Math.max(1/9,Math.pow(3,VW.sk*(S-Sm)))),fc=1+C;
+  const Sm=sMean(c.r),fs=Math.min(5,Math.max(1/5,Math.pow(3,VW.sk*(S-Sm)))),fc=1+C;
   const lg=c.r*Math.log10(3)+Math.log10(fs*fc);
   const o={S,R,C,w,l,packs,packsOne,need,lg,base:0};
   _vm[id]=o;
