@@ -773,9 +773,9 @@ ${PILE.length?`<p class="sum">${can.length} von ${CRAFTS.length} Rezepten mögli
 
 
 /* ===== Schnuck-Wert (₪) ===== */
-/* Wert = 10 · 10^(4,3 · (0,30·Stärke + 0,50·Seltenheit + 0,20·Crafting)) · Zahl-Faktor, gerundet auf 10er, 10 bis 100.000 */
+/* Wert = 10 · 10^(4,3 · (0,25·Stärke + 0,55·Seltenheit + 0,20·Crafting)) · Zahl-Faktor, gerundet auf 10er, 10 bis 100.000 */
 const WT0=[40,30,18,9,3,1,0.5,0.3,0.1,0.03];
-const VW={s:.30,r:.50,c:.20,dec:4.3};
+const VW={s:.25,r:.55,c:.20,dec:4.3};
 const fmtV=v=>v.toLocaleString('de-DE')+' ₪';
 const _vm={};
 function valInfo(id){
